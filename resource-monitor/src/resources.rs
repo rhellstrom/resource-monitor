@@ -1,5 +1,5 @@
 use sysinfo::{CpuExt, DiskExt, RefreshKind, System, SystemExt};
-use serde::{Serialize, Deserialize};
+use serde::{Serialize};
 
 
 #[derive(Serialize, Debug)]
@@ -16,6 +16,24 @@ pub struct Resources {
 }
 
 impl Resources {
+    pub fn new() -> Self {
+        let mut sys = get_system();
+        sys.refresh_all();
+        let disk_space = disk_info(&mut sys);
+
+        Resources {
+            hostname: sys.host_name().unwrap(),
+            total_memory: sys.total_memory(),
+            used_memory: sys.used_memory(),
+            total_space: disk_space.0,
+            available_space: disk_space.1,
+            cpu_amount: sys.cpus().len(),
+            cpu_usage: sys.global_cpu_info().cpu_usage(),
+            system_struct: sys,
+        }
+
+    }
+
     pub(crate) fn refresh(&mut self) {
         self.system_struct.refresh_cpu();
         self.cpu_usage = self.system_struct.global_cpu_info().cpu_usage();
@@ -23,6 +41,7 @@ impl Resources {
         self.used_memory = self.system_struct.used_memory();
         self.used_memory = disk_info(&mut self.system_struct).1;
     }
+    //TODO: method for serializing to JSON
 }
 
 //Goes through each disk to retrieve the total and available disk space on the system
@@ -51,20 +70,3 @@ fn get_system() -> System {
     sys
 }
 
-//Breaks down the system struct into one with the variables we are interested in
-pub fn retrieve_host_information() -> Resources{
-    let mut sys = get_system();
-    sys.refresh_all();
-    let disk_space = disk_info(&mut sys);
-
-    Resources {
-        hostname: sys.host_name().unwrap(),
-        total_memory: sys.total_memory(),
-        used_memory: sys.used_memory(),
-        total_space: disk_space.0,
-        available_space: disk_space.1,
-        cpu_amount: sys.cpus().len(),
-        cpu_usage: sys.global_cpu_info().cpu_usage(),
-        system_struct: sys,
-    }
-}
