@@ -1,6 +1,6 @@
 mod resources;
 
-use crate::resources::{get_system, retrieve_host_information};
+use crate::resources::{retrieve_host_information};
 
 fn main() {
     println!("Sup fools");

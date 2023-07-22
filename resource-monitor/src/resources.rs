@@ -14,12 +14,16 @@ pub struct Resources {
 
 impl Resources {
     pub(crate) fn refresh(&mut self) {
-        self.cpu_usage = calc_cpu_usage(&mut self.system_struct)
+        self.cpu_usage = calc_cpu_usage(&mut self.system_struct);
+        self.system_struct.refresh_memory();
+        self.used_memory = self.system_struct.used_memory();
+        self.used_memory = disk_info(&mut self.system_struct).1;
     }
 }
 
 //Goes through each disk to retrieve the total and available disk space on the system
-fn disk_info(sys: &System) -> (u64, u64){
+fn disk_info(sys: &mut System) -> (u64, u64){
+    sys.refresh_disks();
     let mut total = 0;
     let mut available = 0;
     for disk in sys.disks() {
@@ -40,7 +44,7 @@ fn calc_cpu_usage(sys: &mut System) -> f32 {
 }
 
 //Creates a System struct excluding the information we won't be using as of now
-pub fn get_system() -> System {
+fn get_system() -> System {
     let mut sys = System::new_with_specifics(
         RefreshKind::everything()
             .without_components()
@@ -54,12 +58,9 @@ pub fn get_system() -> System {
 
 //Breaks down the system struct into one with the variables we are interested in
 pub fn retrieve_host_information() -> Resources{
-// Please note that we use "new_all" to ensure that all list of
-// components, network interfaces, disks and users are already
-// filled!
     let mut sys = get_system();
     sys.refresh_all();
-    let disk_space = disk_info(&sys);
+    let disk_space = disk_info(&mut sys);
 
     Resources {
         hostname: sys.host_name().unwrap(),
