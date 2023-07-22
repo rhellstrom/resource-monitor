@@ -16,6 +16,7 @@ pub struct Resources {
 }
 
 impl Resources {
+    /// Creates an instance of System and returns a Resources struct with desired system information
     pub fn new() -> Self {
         let mut sys = get_system();
         sys.refresh_all();
@@ -33,7 +34,7 @@ impl Resources {
         }
 
     }
-
+    /// Refreshes the CPU, memory and disk usage
     pub(crate) fn refresh(&mut self) {
         self.system_struct.refresh_cpu();
         self.cpu_usage = self.system_struct.global_cpu_info().cpu_usage();
@@ -41,10 +42,13 @@ impl Resources {
         self.used_memory = self.system_struct.used_memory();
         self.used_memory = disk_info(&mut self.system_struct).1;
     }
-    //TODO: method for serializing to JSON
+
+    pub fn serialize(&self) -> String {
+        serde_json::to_string(self).unwrap()
+    }
 }
 
-//Goes through each disk to retrieve the total and available disk space on the system
+/// Iterates through each disk summing up the total and available space on the system
 fn disk_info(sys: &mut System) -> (u64, u64){
     sys.refresh_disks();
     let mut total = 0;
@@ -56,7 +60,7 @@ fn disk_info(sys: &mut System) -> (u64, u64){
     (total, available)
 }
 
-//Creates a System struct excluding the information we won't be using as of now
+/// Returns a System struct using System::new_with_specifics and fills it with information using refresh.all()
 fn get_system() -> System {
     let mut sys = System::new_with_specifics(
         RefreshKind::everything()
