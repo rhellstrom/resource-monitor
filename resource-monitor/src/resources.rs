@@ -40,7 +40,7 @@ impl Resources {
         self.cpu_usage = self.system_struct.global_cpu_info().cpu_usage();
         self.system_struct.refresh_memory();
         self.used_memory = self.system_struct.used_memory();
-        self.used_memory = disk_info(&mut self.system_struct).1;
+        self.available_space = disk_info(&mut self.system_struct).1;
     }
 
     pub fn serialize(&self) -> String {
