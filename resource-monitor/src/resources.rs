@@ -1,6 +1,8 @@
 use sysinfo::{CpuExt, DiskExt, RefreshKind, System, SystemExt};
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug)]
+
+#[derive(Serialize, Debug)]
 pub struct Resources {
     hostname: String,
     total_memory: u64,
@@ -9,6 +11,7 @@ pub struct Resources {
     available_space: u64,
     cpu_amount: usize,
     pub cpu_usage: f32,
+    #[serde(skip_serializing)]
     system_struct: System,
 }
 
