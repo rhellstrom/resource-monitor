@@ -14,7 +14,8 @@ pub struct Resources {
 
 impl Resources {
     pub(crate) fn refresh(&mut self) {
-        self.cpu_usage = calc_cpu_usage(&mut self.system_struct);
+        self.system_struct.refresh_cpu();
+        self.cpu_usage = self.system_struct.global_cpu_info().cpu_usage();
         self.system_struct.refresh_memory();
         self.used_memory = self.system_struct.used_memory();
         self.used_memory = disk_info(&mut self.system_struct).1;
@@ -33,16 +34,6 @@ fn disk_info(sys: &mut System) -> (u64, u64){
     (total, available)
 }
 
-//Divides the usage of each CPU with # of cores to get the total usage
-fn calc_cpu_usage(sys: &mut System) -> f32 {
-    sys.refresh_cpu();
-    let mut total : f32 = 0.0;
-    for cpu in sys.cpus(){
-        total += cpu.cpu_usage();
-    }
-    total / sys.cpus().len() as f32
-}
-
 //Creates a System struct excluding the information we won't be using as of now
 fn get_system() -> System {
     let mut sys = System::new_with_specifics(
@@ -51,6 +42,7 @@ fn get_system() -> System {
             .without_networks()
             .without_processes()
             .without_users_list()
+            .without_networks_list()
     );
     sys.refresh_all();
     sys
@@ -69,7 +61,7 @@ pub fn retrieve_host_information() -> Resources{
         total_space: disk_space.0,
         available_space: disk_space.1,
         cpu_amount: sys.cpus().len(),
-        cpu_usage: calc_cpu_usage(&mut sys),
+        cpu_usage: sys.global_cpu_info().cpu_usage(),
         system_struct: sys,
     }
 }
