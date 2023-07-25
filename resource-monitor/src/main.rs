@@ -1,40 +1,43 @@
 mod resources;
+mod args;
 
 use crate::resources::{Resources};
 use axum::{routing::get, Router, Json};
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use clap::Parser;
 use tokio::time::sleep;
+use args::Args;
 
 #[tokio::main]
 async fn main() {
-    let resource_mutex = Arc::new(Mutex::new(Resources::new()));
-    // Spawn a thread that will refresh the Resources struct
-    tokio::spawn(refresh_loop(Arc::clone(&resource_mutex)));
+    let args = Args::parse();
 
-    // Clone the Arc to increase reference count, allowing multiple threads to share ownership
-    let app = Router::new().route("/", get(move || {
+    //Initialize resources and wrap in an Arc and Mutex to be shared across threads
+    let resource_mutex = Arc::new(Mutex::new(Resources::new()));
+    tokio::spawn(refresh_loop(Arc::clone(&resource_mutex), args.update_frequency));
+
+    let app = Router::new().route("/resources", get(move || {
+        //Clone arc to increase reference count
         let resource_mutex = Arc::clone(&resource_mutex);
         async move {
             let resource = resource_mutex.lock().unwrap();
             Json(resource.serialize()) //Content-Type JSON
         }
     }));
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
 
+    //Bind to localhost for now
+    let addr = SocketAddr::from(([127, 0, 0, 1], args.port));
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
         .unwrap();
 }
 
-async fn refresh_loop(resources: Arc<Mutex<Resources>>) {
+async fn refresh_loop(resources: Arc<Mutex<Resources>>, update_frequency: u64) {
     loop {
-        // Sleep for 2000 ms
-        sleep(Duration::from_millis(2000)).await;
-
-        // Refresh the Resources struct
+        sleep(Duration::from_millis(update_frequency)).await;
         let mut resource = resources.lock().unwrap();
         resource.refresh();
     }
