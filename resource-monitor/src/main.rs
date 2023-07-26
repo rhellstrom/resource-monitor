@@ -2,10 +2,11 @@ mod resources;
 mod args;
 
 use crate::resources::{Resources};
-use axum::{routing::get, Router, Json};
+use axum::{routing::get, Router};
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use axum::http::header::CONTENT_TYPE;
 use clap::Parser;
 use tokio::time::sleep;
 use args::Args;
@@ -23,7 +24,11 @@ async fn main() {
         let resource_mutex = Arc::clone(&resource_mutex);
         async move {
             let resource = resource_mutex.lock().unwrap();
-            Json(resource.serialize()) //Content-Type JSON
+            let json_response = resource.serialize(); //Content-Type JSON
+            axum::http::Response::builder()
+                .header(CONTENT_TYPE, "application/json")
+                .body(json_response)
+                .unwrap()
         }
     }));
 
