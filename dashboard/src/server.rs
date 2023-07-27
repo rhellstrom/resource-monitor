@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize, Debug)]
-pub struct Resources {
+/// A representation of the server we are monitoring
+#[derive(Deserialize, Serialize, Debug, Default)]
+pub struct Server {
+    #[serde(skip)]
+    pub endpoint: String,
     pub hostname: String,
     pub total_memory: u64,
     pub used_memory: u64,
