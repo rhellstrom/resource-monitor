@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 crossterm = "0.26.1"
 ratatui = { version = "0.22.0", features = ["all-widgets"] }
-reqwest = "0.11.18"
-serde = "1.0.175"
+reqwest = { version = "0.11.18", features = ["blocking"] }
+serde = { version = "1.0.175", features = ["derive"] }
 serde_json = "1.0.103"
 tokio = { version = "1.29.1", features = ["full"] }
