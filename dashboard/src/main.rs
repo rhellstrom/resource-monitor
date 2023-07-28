@@ -1,9 +1,13 @@
 mod server;
 mod requests;
 
+use std::sync::{Arc};
+use std::thread::sleep;
+use std::time::Duration;
 use reqwest::Error;
-use crate::requests::get_resources;
+use crate::requests::{refresh_servers};
 use crate::server::init_with_endpoint;
+use tokio::sync::Mutex;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -13,14 +17,23 @@ async fn main() -> Result<(), Error> {
     server_endpoints.push(url);
     server_endpoints.push(url2);
 
-    let mut servers = init_with_endpoint(server_endpoints);
+    let servers = Arc::new(Mutex::new(init_with_endpoint(server_endpoints)));
     println!("{:?}", servers);
     println!();
     println!();
     let client = reqwest::Client::new();
 
-    get_resources(&mut servers, client).await;
+    let servers_clone = Arc::clone(&servers);
+    let client_clone = client.clone();
 
-    println!("{:?}", servers);
-    Ok(())
+    tokio::task::spawn_blocking(move || {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(refresh_servers(servers_clone, client_clone, 4))
+    });
+
+    loop {
+        sleep(Duration::from_secs(4));
+        println!("{:?}", servers.lock().await);
+        println!();
+    }
 }

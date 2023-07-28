@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-/// A representation of the server we are monitoring
+/// A representation of a server we are monitoring
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct Server {
     #[serde(skip)]
