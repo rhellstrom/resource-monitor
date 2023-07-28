@@ -1,9 +1,9 @@
 mod server;
 mod requests;
 
-use server::Server;
 use reqwest::Error;
 use crate::requests::get_resources;
+use crate::server::init_with_endpoint;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -13,15 +13,7 @@ async fn main() -> Result<(), Error> {
     server_endpoints.push(url);
     server_endpoints.push(url2);
 
-    let mut servers: Vec<Server> = vec![];
-
-    //Create a Server for each endpoint we wish to track and populate with default values until we call refresh
-    for endpoint in server_endpoints {
-        servers.push(Server {
-            endpoint,
-            ..Default::default()
-        })
-    }
+    let mut servers = init_with_endpoint(server_endpoints);
     println!("{:?}", servers);
     println!();
     println!();

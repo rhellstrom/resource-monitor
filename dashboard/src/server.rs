@@ -13,3 +13,14 @@ pub struct Server {
     pub cpu_amount: usize,
     pub cpu_usage: f32,
 }
+
+pub fn init_with_endpoint(endpoints: Vec<String>) -> Vec<Server> {
+    let mut servers: Vec<Server> = vec![];
+    for endpoint in endpoints {
+        servers.push(Server {
+            endpoint,
+            ..Default::default()
+        })
+    }
+    servers
+}
