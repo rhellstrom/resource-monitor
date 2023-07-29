@@ -27,19 +27,23 @@ async fn main() -> Result<()> {
 
 
     let servers_clone = Arc::clone(&servers);
-    tokio::task::spawn_blocking(move || {
+    let refresh_thread = tokio::task::spawn_blocking(move || {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(refresh_servers(servers_clone, 4))
     });
-    /*
-    loop {
-        sleep(Duration::from_secs(4));
-        println!("{:?}", servers.lock().await);
-        println!();
-    } */
+
 
     let mut terminal = setup_terminal().context("setup failed")?;
     run(&mut terminal).context("app loop failed")?;
     restore_terminal(&mut terminal).context("restore terminal failed")?;
+
+
+    //Find a way to shut down the refresh thread when exiting application. AtomicBool of any use?
+    refresh_thread.abort();
+    loop {
+        sleep(Duration::from_secs(4));
+        println!("{:?}", servers.lock().await);
+        println!();
+    }
     Ok(())
 }
