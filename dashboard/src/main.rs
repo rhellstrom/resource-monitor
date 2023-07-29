@@ -21,14 +21,12 @@ async fn main() -> Result<(), Error> {
     println!("{:?}", servers);
     println!();
     println!();
-    let client = reqwest::Client::new();
+
 
     let servers_clone = Arc::clone(&servers);
-    let client_clone = client.clone();
-
     tokio::task::spawn_blocking(move || {
         let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(refresh_servers(servers_clone, client_clone, 4))
+        rt.block_on(refresh_servers(servers_clone, 4))
     });
 
     loop {

@@ -21,9 +21,10 @@ pub async fn get_servers(servers: &mut [Server], client: &Client) {
     }
 }
 
-/// To be spawned in a thread. Sleeps update_frequency amount of seconds,
-/// acquires the mutex and calls get_servers() on the vector in a loop
-pub async fn refresh_servers(servers: Arc<Mutex<Vec<Server>>>, client: Client, update_frequency: u64){
+/// Creates a reqwest::Client, attempts to acquire the Mutex and calls get_servers()
+/// to refresh our structs and then sleeps update_frequency amount of seconds
+pub async fn refresh_servers(servers: Arc<Mutex<Vec<Server>>>, update_frequency: u64){
+    let client = Client::new();
     loop {
         sleep(Duration::from_secs(update_frequency)).await;
         let mut servers = servers.lock().await;
