@@ -1,4 +1,5 @@
 use std::sync::{Arc};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use crate::server::Server;
@@ -23,9 +24,13 @@ pub async fn get_servers(servers: &mut [Server], client: &Client) {
 
 /// Creates a reqwest::Client, attempts to acquire the Mutex and calls get_servers()
 /// to refresh our structs and then sleeps update_frequency amount of seconds
-pub async fn refresh_servers(servers: Arc<Mutex<Vec<Server>>>, update_frequency: u64){
+pub async fn refresh_servers(servers: Arc<Mutex<Vec<Server>>>, update_frequency: u64, exit_loop: Arc<AtomicBool>){
     let client = Client::new();
     loop {
+        if exit_loop.load(Ordering::Relaxed) {
+            break;
+        }
+        
         sleep(Duration::from_secs(update_frequency)).await;
         let mut servers = servers.lock().await;
         get_servers(&mut servers, &client).await;

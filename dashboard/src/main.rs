@@ -3,10 +3,8 @@ mod requests;
 mod terminal;
 
 use std::sync::{Arc};
-use std::thread::sleep;
-use std::time::Duration;
+use std::sync::atomic::{AtomicBool, Ordering};
 use anyhow::{Context, Result};
-use reqwest::Error;
 use crate::requests::{refresh_servers};
 use crate::server::init_with_endpoint;
 use tokio::sync::Mutex;
@@ -25,11 +23,14 @@ async fn main() -> Result<()> {
     println!();
     println!();
 
-
+    // Create an atomic bool wrapped in an Arc to pass to the refresh_thread
+    let exit_loop = Arc::new(AtomicBool::new(false));
     let servers_clone = Arc::clone(&servers);
-    let refresh_thread = tokio::task::spawn_blocking(move || {
+    let exit_loop_clone = exit_loop.clone(); //Clone to share reference
+
+    tokio::task::spawn_blocking(move || {
         let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(refresh_servers(servers_clone, 4))
+        rt.block_on(refresh_servers(servers_clone, 4, exit_loop_clone))
     });
 
 
@@ -37,13 +38,8 @@ async fn main() -> Result<()> {
     run(&mut terminal).context("app loop failed")?;
     restore_terminal(&mut terminal).context("restore terminal failed")?;
 
+    //Shut down the refresh thread by altering the AtomicBool value
+    exit_loop.store(true, Ordering::Relaxed);
 
-    //Find a way to shut down the refresh thread when exiting application. AtomicBool of any use?
-    refresh_thread.abort();
-    loop {
-        sleep(Duration::from_secs(4));
-        println!("{:?}", servers.lock().await);
-        println!();
-    }
     Ok(())
 }
