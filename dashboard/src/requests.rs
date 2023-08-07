@@ -1,10 +1,10 @@
-use std::sync::{Arc};
+use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use crate::server::Server;
 use reqwest::{Client, StatusCode};
-use tokio::sync::Mutex;
+
 
 /// Iterates through the vector of Server and makes a GET request to each endpoint
 /// and updates the struct if we got a status code 200 in the response.
@@ -30,9 +30,9 @@ pub async fn refresh_servers(servers: Arc<Mutex<Vec<Server>>>, update_frequency:
         if exit_loop.load(Ordering::Relaxed) {
             break;
         }
-        
+
         sleep(Duration::from_secs(update_frequency)).await;
-        let mut servers = servers.lock().await;
+        let mut servers = servers.lock().unwrap();
         get_servers(&mut servers, &client).await;
     }
 }

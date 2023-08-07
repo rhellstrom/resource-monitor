@@ -2,12 +2,11 @@ mod server;
 mod requests;
 mod terminal;
 
-use std::sync::{Arc};
+use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 use anyhow::{Context, Result};
 use crate::requests::{refresh_servers};
 use crate::server::init_with_endpoint;
-use tokio::sync::Mutex;
 use crate::terminal::{restore_terminal, run, setup_terminal};
 
 #[tokio::main]
@@ -30,12 +29,12 @@ async fn main() -> Result<()> {
 
     tokio::task::spawn_blocking(move || {
         let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(refresh_servers(servers_clone, 4, exit_loop_clone))
+        rt.block_on(refresh_servers(servers_clone, 1, exit_loop_clone))
     });
 
 
     let mut terminal = setup_terminal().context("setup failed")?;
-    run(&mut terminal).context("app loop failed")?;
+    run(&mut terminal, Arc::clone(&servers)).context("app loop failed")?;
     restore_terminal(&mut terminal).context("restore terminal failed")?;
 
     //Shut down the refresh thread by altering the AtomicBool value

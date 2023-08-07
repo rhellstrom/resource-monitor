@@ -3,6 +3,8 @@ use std::{
     time::Duration,
 };
 
+use std::sync::{Arc, Mutex};
+
 use anyhow::{Context, Result};
 use crossterm::{
     event::{self, Event, KeyCode},
@@ -10,6 +12,7 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{prelude::*, widgets::*};
+use crate::server::Server;
 
 /// Setup the terminal. This is where you would enable raw mode, enter the alternate screen, and
 /// hide the cursor. This example does not handle errors. A more robust application would probably
@@ -34,9 +37,25 @@ pub fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Re
 /// state. This example exits when the user presses 'q'. Other styles of application loops are
 /// possible, for example, you could have multiple application states and switch between them based
 /// on events, or you could have a single application state and update it based on events.
-pub fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
+pub fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>, servers: Arc<Mutex<Vec<Server>>>) -> Result<()> {
     loop {
-        terminal.draw(render_app)?;
+        terminal.draw(|f| {
+            let current_cpu = servers.lock().unwrap().get(0).unwrap().cpu_usage;
+
+            let size = f.size();
+            let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .margin(5)
+                .constraints([Constraint::Min(0)].as_ref())
+                .split(size);
+
+           let gauge = Gauge::default()
+               .block(Block::default().borders(Borders::ALL).title("CPU Usage: "))
+               .gauge_style(Style::default().fg(Color::Green))
+               .percent(current_cpu as u16);
+            f.render_widget(gauge, chunks[0]);
+        })?;
+
         if should_quit()? {
             break;
         }
@@ -46,7 +65,7 @@ pub fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
 
 /// Render the application. This is where you would draw the application UI. This example just
 /// draws a greeting.
-fn render_app(frame: &mut ratatui::Frame<CrosstermBackend<Stdout>>) {
+fn render_app(frame: &mut Frame<CrosstermBackend<Stdout>>) {
     let greeting = Paragraph::new("Hello World! (press 'q' to quit)");
     frame.render_widget(greeting, frame.size());
 }
