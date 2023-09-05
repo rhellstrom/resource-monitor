@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 /// A representation of a server we are monitoring
-#[derive(Deserialize, Serialize, Debug, Default)]
+#[derive(Deserialize, Serialize, Clone, Debug, Default)]
 pub struct Server {
     #[serde(skip)]
     pub endpoint: String,

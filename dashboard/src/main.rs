@@ -1,6 +1,7 @@
 mod server;
 mod requests;
 mod terminal;
+mod ui;
 
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -32,10 +33,7 @@ async fn main() -> Result<()> {
         rt.block_on(refresh_servers(servers_clone, 1, exit_loop_clone))
     });
 
-
-    let mut terminal = setup_terminal().context("setup failed")?;
-    run(&mut terminal, Arc::clone(&servers)).context("app loop failed")?;
-    restore_terminal(&mut terminal).context("restore terminal failed")?;
+    run( Arc::clone(&servers)).context("app loop failed")?;
 
     //Shut down the refresh thread by altering the AtomicBool value
     exit_loop.store(true, Ordering::Relaxed);

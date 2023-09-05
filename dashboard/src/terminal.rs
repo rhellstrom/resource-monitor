@@ -13,6 +13,7 @@ use crossterm::{
 };
 use ratatui::{prelude::*, widgets::*};
 use crate::server::Server;
+use crate::ui;
 
 /// Setup the terminal. This is where you would enable raw mode, enter the alternate screen, and
 /// hide the cursor. This example does not handle errors. A more robust application would probably
@@ -37,37 +38,22 @@ pub fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Re
 /// state. This example exits when the user presses 'q'. Other styles of application loops are
 /// possible, for example, you could have multiple application states and switch between them based
 /// on events, or you could have a single application state and update it based on events.
-pub fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>, servers: Arc<Mutex<Vec<Server>>>) -> Result<()> {
+pub fn run(servers: Arc<Mutex<Vec<Server>>>) -> Result<()> {
+    let mut terminal = setup_terminal()?;
     loop {
-        terminal.draw(|f| {
-            let current_cpu = servers.lock().unwrap().get(0).unwrap().cpu_usage;
+        //Try retrieving data and cloning it so we can release the lock
+        let servers_copy = servers.lock().unwrap().to_vec();
+        //Display
+        terminal.draw(|f| ui::draw(f, servers_copy))?;
 
-            let size = f.size();
-            let chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .margin(5)
-                .constraints([Constraint::Min(0)].as_ref())
-                .split(size);
-
-           let gauge = Gauge::default()
-               .block(Block::default().borders(Borders::ALL).title("CPU Usage: "))
-               .gauge_style(Style::default().fg(Color::Green))
-               .percent(current_cpu as u16);
-            f.render_widget(gauge, chunks[0]);
-        })?;
 
         if should_quit()? {
             break;
         }
     }
+    //Restore when we're done
+    restore_terminal(&mut terminal)?;
     Ok(())
-}
-
-/// Render the application. This is where you would draw the application UI. This example just
-/// draws a greeting.
-fn render_app(frame: &mut Frame<CrosstermBackend<Stdout>>) {
-    let greeting = Paragraph::new("Hello World! (press 'q' to quit)");
-    frame.render_widget(greeting, frame.size());
 }
 
 /// Check if the user has pressed 'q'. This is where you would handle events. This example just
