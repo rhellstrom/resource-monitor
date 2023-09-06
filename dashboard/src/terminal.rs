@@ -3,7 +3,8 @@ use std::{
     time::Duration,
 };
 
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
+use std::thread::sleep;
 
 use anyhow::{Context, Result};
 use crossterm::{
@@ -12,6 +13,8 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{prelude::*, widgets::*};
+use tokio::sync::Mutex;
+use crate::app::App;
 use crate::server::Server;
 use crate::ui;
 
@@ -38,13 +41,15 @@ pub fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Re
 /// state. This example exits when the user presses 'q'. Other styles of application loops are
 /// possible, for example, you could have multiple application states and switch between them based
 /// on events, or you could have a single application state and update it based on events.
-pub fn run(servers: Arc<Mutex<Vec<Server>>>) -> Result<()> {
+pub async fn run(servers: Arc<Mutex<Vec<Server>>>) -> Result<()> {
     let mut terminal = setup_terminal()?;
+    //let mut app = App::new(String::from("Dashboard"),servers.lock().await.to_vec());
     loop {
-        //Try retrieving data and cloning it so we can release the lock
-        let servers_copy = servers.lock().unwrap().to_vec();
+        //let servers_copy = servers.lock().unwrap().to_vec();
         //Display
-        terminal.draw(|f| ui::draw(f, servers_copy))?;
+        //TEMPORARY to check that we got tabs working
+        let mut app = App::new(String::from("Dashboard"),servers.lock().await.to_vec());
+        terminal.draw(|f| ui::draw(f, &mut app))?;
 
 
         if should_quit()? {

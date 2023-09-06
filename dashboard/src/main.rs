@@ -2,13 +2,15 @@ mod server;
 mod requests;
 mod terminal;
 mod ui;
+mod app;
 
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use anyhow::{Context, Result};
+use tokio::sync::Mutex;
 use crate::requests::{refresh_servers};
 use crate::server::init_with_endpoint;
-use crate::terminal::{restore_terminal, run, setup_terminal};
+use crate::terminal::{run};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -19,6 +21,7 @@ async fn main() -> Result<()> {
     server_endpoints.push(url2);
 
     let servers = Arc::new(Mutex::new(init_with_endpoint(server_endpoints)));
+
     println!("{:?}", servers);
     println!();
     println!();
@@ -33,10 +36,11 @@ async fn main() -> Result<()> {
         rt.block_on(refresh_servers(servers_clone, 1, exit_loop_clone))
     });
 
-    run( Arc::clone(&servers)).context("app loop failed")?;
+    run(Arc::clone(&servers)).await.expect("run from main panic");
 
     //Shut down the refresh thread by altering the AtomicBool value
     exit_loop.store(true, Ordering::Relaxed);
 
+    println!("{:?}", servers.lock().await);
     Ok(())
 }
