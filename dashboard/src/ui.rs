@@ -33,7 +33,7 @@ pub fn draw_tabs(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: R
     f.render_widget(tabs, area);
 }
 
-pub fn draw_gauge(f: &mut Frame<CrosstermBackend<Stdout>>, _app: &mut App, area: Rect) {
+pub fn draw_gauge(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
     let chunks = Layout::default()
         .constraints([Constraint::Length(2)])
         .direction(Direction::Vertical)
@@ -43,9 +43,10 @@ pub fn draw_gauge(f: &mut Frame<CrosstermBackend<Stdout>>, _app: &mut App, area:
     let gauge = Gauge::default()
         .block(Block::default().borders(Borders::ALL).title("CPU Usage: "))
         .gauge_style(Style::default().fg(Color::Green))
-        .percent(55);
+        .percent(app.test_cpu as u16);
     f.render_widget(gauge, chunks[0]);
 }
+
 /*
 pub fn draw_overview(f: &mut Frame<CrosstermBackend<Stdout>>, servers: Vec<Server>, area: Rect){
 

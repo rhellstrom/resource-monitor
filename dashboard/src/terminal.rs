@@ -4,7 +4,7 @@ use std::{
 };
 
 use std::sync::{Arc};
-use std::thread::sleep;
+use std::time::Instant;
 
 use anyhow::{Context, Result};
 use crossterm::{
@@ -12,7 +12,8 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{prelude::*, widgets::*};
+use crossterm::event::KeyEventKind;
+use ratatui::{prelude::*};
 use tokio::sync::Mutex;
 use crate::app::App;
 use crate::server::Server;
@@ -37,22 +38,38 @@ pub fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Re
     terminal.show_cursor().context("unable to show cursor")
 }
 
-/// Run the application loop. This is where you would handle events and update the application
-/// state. This example exits when the user presses 'q'. Other styles of application loops are
-/// possible, for example, you could have multiple application states and switch between them based
-/// on events, or you could have a single application state and update it based on events.
-pub async fn run(servers: Arc<Mutex<Vec<Server>>>) -> Result<()> {
+/// Runs the TUI loop. We setup the terminal environment, draw the application and react to user input
+/// and updates the data to be drawn on each tick. Once loop is exited we restore the terminal
+pub async fn run(servers: Arc<Mutex<Vec<Server>>>, tick_rate: Duration) -> Result<()> {
     let mut terminal = setup_terminal()?;
-    //let mut app = App::new(String::from("Dashboard"),servers.lock().await.to_vec());
+    let mut app = App::new(String::from("Dashboard"));
+    let last_tick = Instant::now();
+
     loop {
-        //let servers_copy = servers.lock().unwrap().to_vec();
-        //Display
-        //TEMPORARY to check that we got tabs working
-        let mut app = App::new(String::from("Dashboard"),servers.lock().await.to_vec());
         terminal.draw(|f| ui::draw(f, &mut app))?;
 
+        let timeout = tick_rate
+            .checked_sub(last_tick.elapsed())
+            .unwrap_or_else(|| Duration::from_secs(0));
 
-        if should_quit()? {
+        if event::poll(timeout)? {
+            if let Event::Key(key) = event::read()? {
+                if key.kind == KeyEventKind::Press {
+                    //Read keyboard input from here
+                    match key.code {
+                        KeyCode::Char(c) => app.on_key(c),
+                        KeyCode::Left => app.on_left(),
+                        KeyCode::Right => app.on_right(),
+                        _ => {}
+                    }
+                }
+            }
+        }
+        // On each tick we update the data to be drawn in the next iteration
+        if last_tick.elapsed() >= tick_rate {
+            app.on_tick(servers.lock().await.to_vec())
+        }
+        if app.should_quit {
             break;
         }
     }
@@ -61,15 +78,3 @@ pub async fn run(servers: Arc<Mutex<Vec<Server>>>) -> Result<()> {
     Ok(())
 }
 
-/// Check if the user has pressed 'q'. This is where you would handle events. This example just
-/// checks if the user has pressed 'q' and returns true if they have. It does not handle any other
-/// events. There is a 250ms timeout on the event poll so that the application can exit in a timely
-/// manner, and to ensure that the terminal is rendered at least once every 250ms.
-fn should_quit() -> Result<bool> {
-    if event::poll(Duration::from_millis(250)).context("event poll failed")? {
-        if let Event::Key(key) = event::read().context("event read failed")? {
-            return Ok(KeyCode::Char('q') == key.code);
-        }
-    }
-    Ok(false)
-}
