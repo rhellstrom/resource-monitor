@@ -21,7 +21,7 @@ async fn main() -> Result<()> {
     server_endpoints.push(url);
     server_endpoints.push(url2);
 
-    let servers = Arc::new(Mutex::new(init_with_endpoint(server_endpoints)));
+    let servers = Arc::new(Mutex::new(init_with_endpoint(server_endpoints.clone())));
 
     println!("{:?}", servers);
     println!();
@@ -34,7 +34,7 @@ async fn main() -> Result<()> {
 
     tokio::task::spawn_blocking(move || {
         let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(refresh_servers(servers_clone, 1, exit_loop_clone))
+        rt.block_on(refresh_servers(servers_clone, 1, exit_loop_clone, server_endpoints))
     });
 
     run(Arc::clone(&servers)).await.expect("Application loop failure");

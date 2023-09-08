@@ -1,29 +1,35 @@
 use std::sync::{Arc};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
-use tokio::time::sleep;
+use tokio::time::{interval, sleep};
 use crate::server::Server;
 use reqwest::{Client, StatusCode};
 use tokio::sync::Mutex;
 
+//Servers a mutex?
 pub struct Serverlist {
-    pub servers: Vec<Server>,
+    pub servers: Arc<Mutex<Vec<Server>>>,
+    endpoints: Vec<String>,
     client: Client,
     exit_refresh: Arc<AtomicBool>,
     update_interval: u64,
 }
 
+//TODO: Clean up the cloning of endpoints
 impl Serverlist {
     pub fn new(endpoints: Vec<String>) -> Serverlist {
         Serverlist {
-            servers: init_with_endpoint(endpoints),
+            servers: Arc::new(Mutex::new(init_with_endpoint(&endpoints))),
+            endpoints,
             client: Client::new(),
             exit_refresh: Arc::new(AtomicBool::new(false)),
             update_interval: 2000,
         }
     }
-    async fn fetch_data(&mut self){
-        for server in self.servers.iter_mut() {
+    async fn fetch_data(&mut self) -> Vec<Server>{
+        let mut temp_container = init_with_endpoint(&self.endpoints);
+
+        for server in temp_container.iter_mut() {
             let endpoint = server.endpoint.clone();
             if let Ok(response) = self.client.get(&endpoint).send().await {
                 if response.status() == StatusCode::OK {
@@ -33,19 +39,31 @@ impl Serverlist {
                 }
             }
         }
+        temp_container
     }
-    pub fn refresh_list(&self){
+
+    //Create a servers clone and a reference clone?
+    pub async fn refresh_list(&mut self)  {
         let exit_refresh = Arc::clone(&self.exit_refresh);
-        let servers_clone = self.servers.clone();
-        //let update_interval = self.update_interval;
+        let servers_mutex = self.servers.clone(); // Create a local reference
+
+        tokio::spawn(async move {
+            let mut interval = interval(Duration::from_millis(self.update_interval));
+            while !exit_refresh.load(Ordering::Relaxed) {
+                let updated_data = self.fetch_data().await;
+                let mut servers= servers_mutex.lock().await;
+                *servers = updated_data;
+                interval.tick().await;
+            }
+        });
     }
 
     pub fn stop_refresh(&mut self){
-        self.exit_refresh = true;
+        self.exit_refresh.store(true, Ordering::Relaxed);
     }
 }
 
-pub fn init_with_endpoint(endpoints: Vec<String>) -> Vec<Server> {
+pub fn init_with_endpoint(endpoints: &Vec<String>) -> Vec<Server> {
     let mut servers: Vec<Server> = vec![];
     for endpoint in endpoints {
         servers.push(Server {
