@@ -3,6 +3,7 @@ mod requests;
 mod terminal;
 mod ui;
 mod app;
+//mod serverlist;
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -36,7 +37,7 @@ async fn main() -> Result<()> {
         rt.block_on(refresh_servers(servers_clone, 1, exit_loop_clone))
     });
 
-    run(Arc::clone(&servers)).await.expect("run from main panic");
+    run(Arc::clone(&servers)).await.expect("Application loop failure");
 
     //Shut down the refresh thread by altering the AtomicBool value
     exit_loop.store(true, Ordering::Relaxed);

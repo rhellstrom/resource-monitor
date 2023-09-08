@@ -33,6 +33,7 @@ pub async fn refresh_servers(servers: Arc<Mutex<Vec<Server>>>, update_frequency:
         }
         let mut servers = servers.lock().await;
         get_servers(&mut servers, &client).await;
+        //This holds the mutexguard in scope.. 
         sleep(Duration::from_secs(update_frequency)).await;
     }
 }
