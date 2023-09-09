@@ -1,7 +1,7 @@
 use std::io::Stdout;
 use ratatui::backend::CrosstermBackend;
 use ratatui::Frame;
-use ratatui::layout::Direction::{Horizontal, Vertical};
+use ratatui::layout::Direction::{Horizontal};
 use ratatui::prelude::*;
 use ratatui::widgets::*;
 use crate::app::App;
@@ -13,9 +13,7 @@ pub fn draw(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App){
         .constraints([Constraint::Length(4), Constraint::Min(0)].as_ref())
         .split(f.size());
     draw_tabs(f, app, chunks[0]);
-    //draw_server_overview(f, app, chunks[1]);
     draw_server_overview(f, app, chunks[1]);
-    //draw_gauge(f, app, chunks[1]);
 }
 
 pub fn draw_tabs(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
@@ -38,32 +36,24 @@ pub fn draw_tabs(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: R
     f.render_widget(tabs, area);
 }
 
-pub fn draw_gauge(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
-    let chunks = Layout::default()
-        .constraints([Constraint::Length(2)])
-        .direction(Vertical)
-        .margin(1)
-        .split(area);
-
-    let test_percentage = match app.servers.get(0) {
-        Some(server) => server.cpu_usage as u16,
-        None => 0,
+pub fn draw_gauge(f: &mut Frame<CrosstermBackend<Stdout>>, percentage: u16, title: &str, area: Rect) {
+    let gauge_style = if percentage > 90 {
+        Style::default().fg(Color::Red)
+    } else if percentage > 80 {
+        Style::default().fg(Color::LightYellow)
+    } else {
+        Style::default().fg(Color::Green)
     };
 
     let gauge = Gauge::default()
-        .block(Block::default().borders(Borders::ALL).title("CPU Usage: "))
-        .gauge_style(Style::default().fg(Color::Green))
-        .percent(test_percentage);
-    f.render_widget(gauge, chunks[0]);
+        .block(Block::default().borders(Borders::ALL).title(title))
+        .gauge_style(gauge_style)
+        .percent(percentage);
+    f.render_widget(gauge, area);
 }
 
 
 pub fn draw_server(f: &mut Frame<CrosstermBackend<Stdout>>, server: &Server, area: Rect) {
-    /*let test_percentage = match app.servers.get(0) {
-        Some(server) => server.cpu_usage as u16,
-        None => 0,
-    }; */
-
     let chunks = Layout::default()
         .direction(Horizontal)
         .constraints([Constraint::Length(10), Constraint::Min(0)].as_ref()) // Adjust the length of the first column as needed
@@ -79,42 +69,13 @@ pub fn draw_server(f: &mut Frame<CrosstermBackend<Stdout>>, server: &Server, are
         .margin(2)
         .split(chunks[1]);
 
-    let gauge = Gauge::default()
-        .block(Block::default().borders(Borders::ALL).title("CPU Usage: "))
-        .gauge_style(Style::default().fg(Color::Green))
-        .percent(server.cpu_usage as u16);
-
-    f.render_widget(gauge, gauge_chunks[0]);
-
-    let gauge = Gauge::default()
-        .block(Block::default().borders(Borders::ALL).title("Memory Usage: "))
-        .gauge_style(Style::default().fg(Color::Green))
-        .percent(total_memory(server.used_memory, server.total_memory) as u16);
-
-    f.render_widget(gauge, gauge_chunks[1]);
-
-    let gauge = Gauge::default()
-        .block(Block::default().borders(Borders::ALL).title("Disk usage: : "))
-        .gauge_style(Style::default().fg(Color::Green))
-        .percent(used_percentage(server.available_space, server.total_space) as u16);
-
-    f.render_widget(gauge, gauge_chunks[2]);
-
-    let gauge = Gauge::default()
-        .block(Block::default().borders(Borders::ALL).title("CPU Usage: "))
-        .gauge_style(Style::default().fg(Color::Green))
-        .percent(55);
-
-    f.render_widget(gauge, gauge_chunks[3]);
-
-    let gauge = Gauge::default()
-        .block(Block::default().borders(Borders::ALL).title("CPU Usage: "))
-        .gauge_style(Style::default().fg(Color::Green))
-        .percent(64);
-
-    f.render_widget(gauge, gauge_chunks[4]);
-
-
+    draw_gauge(f, server.cpu_usage as u16, "CPU Usage", gauge_chunks[0]);
+    draw_gauge(f, total_memory(server.used_memory, server.total_memory) as u16,
+               "Memory Usage", gauge_chunks[1]);
+    draw_gauge(f, used_percentage(server.available_space, server.total_space) as u16,
+               "Disk Usage", gauge_chunks[2]);
+    draw_gauge(f, 85, "w/e Usage", gauge_chunks[3]);
+    draw_gauge(f, 96, "w/e Usage", gauge_chunks[4]);
 }
 
 pub fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
@@ -131,19 +92,7 @@ pub fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut A
                 width: area.width,
                 height: subarea_height,
             };
-
             draw_server(f, &app.servers[i as usize], subarea);
         }
     }
 }
-
-/*
-pub fn draw_overview(f: &mut Frame<CrosstermBackend<Stdout>>, servers: Vec<Server>, area: Rect){
-
-}
-
-pub fn draw_server(f: &mut Frame<CrosstermBackend<Stdout>>, area: Rect){
-
-}
-
-*/
