@@ -4,7 +4,7 @@ pub struct App {
     pub title: String,
     pub tabs: TabsState,
     pub should_quit: bool,
-    pub test_cpu: f32,
+    pub servers: Vec<Server>,
 }
 
 impl App {
@@ -13,7 +13,7 @@ impl App {
             title,
             tabs: TabsState::new(),
             should_quit: false,
-            test_cpu: 0.0,
+            servers: vec![],
         }
     }
 
@@ -33,7 +33,7 @@ impl App {
 
     pub fn on_tick(&mut self, servers: Vec<Server>) {
         self.tabs.update_tabs(&servers);    //Would prefer static tab names
-        self.test_cpu = servers.get(0).unwrap().cpu_usage; //temporary
+        self.servers = servers;
     }
 }
 

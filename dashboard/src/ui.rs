@@ -43,15 +43,24 @@ pub fn draw_gauge(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: 
         .margin(1)
         .split(area);
 
+    let test_percentage = match app.servers.get(0) {
+        Some(server) => server.cpu_usage as u16,
+        None => 0,
+    };
+
     let gauge = Gauge::default()
         .block(Block::default().borders(Borders::ALL).title("CPU Usage: "))
         .gauge_style(Style::default().fg(Color::Green))
-        .percent(app.test_cpu as u16);
+        .percent(test_percentage);
     f.render_widget(gauge, chunks[0]);
 }
 
 
 pub fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
+    let test_percentage = match app.servers.get(0) {
+        Some(server) => server.cpu_usage as u16,
+        None => 0,
+    };
 
     let chunks = Layout::default()
         .direction(Horizontal)
@@ -72,7 +81,7 @@ pub fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut A
         let gauge = Gauge::default()
             .block(Block::default().borders(Borders::ALL).title("CPU Usage: "))
             .gauge_style(Style::default().fg(Color::Green))
-            .percent(app.test_cpu as u16);
+            .percent(test_percentage);
 
         f.render_widget(gauge, gauge_chunks[i]);
     }
