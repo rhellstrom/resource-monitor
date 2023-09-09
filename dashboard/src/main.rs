@@ -16,11 +16,7 @@ use crate::terminal::{run};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut server_endpoints: Vec<String> = vec![];
-    let url = "http://localhost:3000/resources".to_string();
-    let url2 = "faulty.endpoint:3000/resources".to_string();
-    server_endpoints.push(url);
-    server_endpoints.push(url2);
+    let server_endpoints = create_endpoints();
 
     //CLAP it up
     let tick_rate = Duration::from_millis(250);
@@ -47,4 +43,21 @@ async fn main() -> Result<()> {
 
     println!("{:?}", servers.lock().await);
     Ok(())
+}
+
+pub fn create_endpoints() -> Vec<String> {
+    let mut server_endpoints: Vec<String> = vec![];
+    let url = "http://localhost:3000/resources".to_string();
+    let url2 = "http://localhost:3000/resources".to_string();
+    let url3 = "http://localhost:3000/resources".to_string();
+    let url4 = "http://localhost:3000/resources".to_string();
+    let url5 = "http://localhost:3000/resources".to_string();
+
+    server_endpoints.push(url);
+    server_endpoints.push(url2);
+    server_endpoints.push(url3);
+    server_endpoints.push(url4);
+    server_endpoints.push(url5);
+
+    server_endpoints
 }
