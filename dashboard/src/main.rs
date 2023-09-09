@@ -3,12 +3,12 @@ mod requests;
 mod terminal;
 mod ui;
 mod app;
-//mod serverlist;
+mod util;
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
-use anyhow::{Context, Result};
+use anyhow::{Result};
 use tokio::sync::Mutex;
 use crate::requests::{refresh_servers};
 use crate::server::init_with_endpoint;
