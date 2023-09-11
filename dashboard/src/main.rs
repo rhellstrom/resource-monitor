@@ -1,5 +1,4 @@
 mod server;
-mod requests;
 mod terminal;
 mod ui;
 mod app;
@@ -13,7 +12,7 @@ use anyhow::{Result};
 use clap::Parser;
 use tokio::sync::Mutex;
 use crate::args::Args;
-use crate::requests::{refresh_servers};
+use crate::server::{refresh_servers};
 use crate::server::init_with_endpoint;
 use crate::terminal::{run};
 
