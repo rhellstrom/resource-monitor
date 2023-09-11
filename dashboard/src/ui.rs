@@ -16,7 +16,7 @@ pub fn draw(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App){
     draw_server_overview(f, app, chunks[1]);
 }
 
-pub fn draw_tabs(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
+fn draw_tabs(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
     let titles: Vec<Line> = app
         .tabs
         .titles
@@ -36,7 +36,7 @@ pub fn draw_tabs(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: R
     f.render_widget(tabs, area);
 }
 
-pub fn draw_gauge(f: &mut Frame<CrosstermBackend<Stdout>>, percentage: u16, title: &str, area: Rect) {
+fn draw_gauge(f: &mut Frame<CrosstermBackend<Stdout>>, percentage: u16, title: &str, area: Rect) {
     let gauge_style = if percentage > 90 {
         Style::default().fg(Color::Red)
     } else if percentage > 80 {
@@ -53,7 +53,7 @@ pub fn draw_gauge(f: &mut Frame<CrosstermBackend<Stdout>>, percentage: u16, titl
 }
 
 
-pub fn draw_server(f: &mut Frame<CrosstermBackend<Stdout>>, server: &Server, area: Rect) {
+fn draw_server(f: &mut Frame<CrosstermBackend<Stdout>>, server: &Server, area: Rect) {
     let chunks = Layout::default()
         .direction(Horizontal)
         .constraints([Constraint::Length(10), Constraint::Min(0)].as_ref()) // Adjust the length of the first column as needed
@@ -78,7 +78,7 @@ pub fn draw_server(f: &mut Frame<CrosstermBackend<Stdout>>, server: &Server, are
     draw_gauge(f, 96, "w/e Usage", gauge_chunks[4]);
 }
 
-pub fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
+fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
     // Calculate the height of each subarea
     let no_of_servers = app.servers.len() as u16;
     if no_of_servers > 0 {

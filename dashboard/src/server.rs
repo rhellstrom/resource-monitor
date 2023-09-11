@@ -34,7 +34,7 @@ pub fn init_with_endpoint(endpoints: Vec<String>) -> Vec<Server> {
 /// Iterates through the vector of Server and makes a GET request to each endpoint
 /// and updates the struct if we got a status code 200 in the response.
 /// Otherwise we silently fail
-pub async fn get_servers(servers: &mut [Server], client: &Client){
+async fn get_servers(servers: &mut [Server], client: &Client){
     for server in servers.iter_mut() {
         let endpoint = server.endpoint.clone();
         if let Ok(response) = client.get(&endpoint).send().await {
@@ -54,7 +54,7 @@ pub async fn refresh_servers(servers: Arc<Mutex<Vec<Server>>>, update_frequency:
     let client = Client::new();
     let mut servers_container = init_with_endpoint(endpoints);
     while !exit_loop.load(Ordering::Relaxed) {
-        sleep(Duration::from_secs(update_frequency)).await;
+        sleep(Duration::from_millis(update_frequency)).await;
         get_servers(&mut servers_container, &client).await;
 
         //Only lock and update mutex after we've fetched data
