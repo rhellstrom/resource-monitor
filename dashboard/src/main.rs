@@ -4,20 +4,24 @@ mod terminal;
 mod ui;
 mod app;
 mod util;
+mod args;
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use anyhow::{Result};
+use clap::Parser;
 use tokio::sync::Mutex;
+use crate::args::Args;
 use crate::requests::{refresh_servers};
 use crate::server::init_with_endpoint;
 use crate::terminal::{run};
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let args = Args::parse();
     let server_endpoints = create_endpoints();
-    let tick_rate = Duration::from_millis(250);
+    let tick_rate = Duration::from_millis(args.tick_rate);
 
     let servers = Arc::new(Mutex::new(init_with_endpoint(server_endpoints.clone())));
     // Create an atomic bool wrapped in an Arc to pass to the refresh_thread
@@ -26,7 +30,7 @@ async fn main() -> Result<()> {
     let exit_loop_clone = exit_loop.clone(); //Clone to share reference
 
     tokio::spawn(async move {
-        refresh_servers(servers_clone, 1, exit_loop_clone, server_endpoints).await;
+        refresh_servers(servers_clone, args.update_frequency, exit_loop_clone, server_endpoints).await;
     });
     run(Arc::clone(&servers), tick_rate).await.expect("Application loop failure");
     //Shut down the refresh thread by altering the AtomicBool value
