@@ -69,7 +69,7 @@ impl TabsState {
         let mut names: Vec<String> = vec![];
         names.push(String::from("Overview"));
         for server in servers{
-            names.push(server.hostname.clone());
+            names.push(server.hostname.chars().take(10).collect());
         }
         self.titles = names;
     }
