@@ -31,7 +31,7 @@ fn setup_terminal() -> Result<Terminal<CrosstermBackend<Stdout>>> {
 
 /// Restore the terminal. This is where you disable raw mode, leave the alternate screen, and show
 /// the cursor.
-fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
+pub fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
     disable_raw_mode().context("failed to disable raw mode")?;
     execute!(terminal.backend_mut(), LeaveAlternateScreen)
         .context("unable to switch to main screen")?;
@@ -40,6 +40,7 @@ fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result
 
 /// Runs the TUI loop. We setup the terminal environment, draw the application and react to user input
 /// and updates the data to be drawn on each tick. Once loop is exited we restore the terminal
+// TODO: Ensure we restore the terminal if we panic
 pub async fn run(servers: Arc<Mutex<Vec<Server>>>, tick_rate: Duration) -> Result<()> {
     let mut terminal = setup_terminal()?;
     let mut app = App::new(String::from("Dashboard"));

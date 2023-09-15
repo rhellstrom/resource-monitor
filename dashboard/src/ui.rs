@@ -74,32 +74,42 @@ fn draw_server(f: &mut Frame<CrosstermBackend<Stdout>>, server: &Server, area: R
 }
 
 fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
-    // Calculate the height of each subarea
     let no_of_servers = app.servers.len() as u16;
 
-    app.vertical_scroll_state = app.vertical_scroll_state.content_length(no_of_servers);
+
 
     if no_of_servers > 0 {
-        let subarea_height = area.height / no_of_servers;
+        let position = 2;
+        let view_length = 5;
 
-        for i in 0..no_of_servers {
+        let end_index = position + view_length.min(no_of_servers - position);
+        app.vertical_scroll_state = app.vertical_scroll_state.content_length(no_of_servers);
+        app.vertical_scroll_state = app.vertical_scroll_state.position(position);
+        app.vertical_scroll_state = app.vertical_scroll_state.viewport_content_length(view_length);
+
+
+        let subarea_height = area.height / view_length;
+
+        for i in position ..end_index {
             // Calculate the position and dimensions of each subarea
             let subarea = Rect {
                 x: area.x,
-                y: area.y + i * subarea_height,
+                y: area.y + (i - position) * subarea_height,
                 width: area.width,
                 height: subarea_height,
             };
-            draw_server(f, &app.servers[i as usize], subarea);
-
-            f.render_stateful_widget(
-                Scrollbar::default()
-                    .orientation(ScrollbarOrientation::VerticalRight)
-                    .begin_symbol(Some("↑"))
-                    .end_symbol(Some("↓")),
-                area,
-                &mut app.vertical_scroll_state,
-            );
+            if i < no_of_servers {
+                draw_server(f, &app.servers[i as usize], subarea);
+            }
         }
+
+        f.render_stateful_widget(
+            Scrollbar::default()
+                .orientation(ScrollbarOrientation::VerticalRight)
+                .begin_symbol(Some("↑"))
+                .end_symbol(Some("↓")),
+            area,
+            &mut app.vertical_scroll_state,
+        );
     }
 }

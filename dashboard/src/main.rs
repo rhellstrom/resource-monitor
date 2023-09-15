@@ -41,7 +41,7 @@ pub fn create_endpoints() -> Vec<String> {
     let mut server_endpoints: Vec<String> = vec![];
     let url = "http://localhost:3000/resources".to_string();
     let url2 = "http://localhost:3000/resources".to_string();
-    let url3 = "http://localhost:3000/resources".to_string();
+    let url3 = "http://faultyhost:3000/resources".to_string();
     let url4 = "http://localhost:3000/resources".to_string();
     let url5 = "http://localhost:3000/resources".to_string();
     let url6 = "http://localhost:3000/resources".to_string();
