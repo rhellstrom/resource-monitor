@@ -44,12 +44,24 @@ pub fn create_endpoints() -> Vec<String> {
     let url3 = "http://localhost:3000/resources".to_string();
     let url4 = "http://localhost:3000/resources".to_string();
     let url5 = "http://localhost:3000/resources".to_string();
+    let url6 = "http://localhost:3000/resources".to_string();
+    let url7 = "http://localhost:3000/resources".to_string();
+    let url8 = "http://localhost:3000/resources".to_string();
+    let url9 = "http://localhost:3000/resources".to_string();
+    let url10 = "http://localhost:3000/resources".to_string();
+
 
     server_endpoints.push(url);
     server_endpoints.push(url2);
     server_endpoints.push(url3);
     server_endpoints.push(url4);
     server_endpoints.push(url5);
+    server_endpoints.push(url6);
+    server_endpoints.push(url7);
+    server_endpoints.push(url8);
+    server_endpoints.push(url9);
+    server_endpoints.push(url10);
+
 
     server_endpoints
 }

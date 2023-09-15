@@ -54,20 +54,15 @@ fn draw_gauge(f: &mut Frame<CrosstermBackend<Stdout>>, percentage: u16, title: &
 
 
 fn draw_server(f: &mut Frame<CrosstermBackend<Stdout>>, server: &Server, area: Rect) {
-    let chunks = Layout::default()
-        .direction(Horizontal)
-        .constraints([Constraint::Length(10), Constraint::Min(0)].as_ref()) // Adjust the length of the first column as needed
-        .margin(0)
-        .split(area);
     let block = Block::default().borders(Borders::ALL).title(server.hostname.clone());
     f.render_widget(block, area);
 
-    let gauge_constraints = vec![Constraint::Percentage(20); 5]; // Adjust the percentage as needed
+    let gauge_constraints = vec![Constraint::Percentage(20); 5];
     let gauge_chunks = Layout::default()
         .direction(Horizontal)
         .constraints(gauge_constraints)
         .margin(2)
-        .split(chunks[1]);
+        .split(area);
 
     draw_gauge(f, server.cpu_usage as u16, "CPU Usage", gauge_chunks[0]);
     draw_gauge(f, total_memory(server.used_memory, server.total_memory) as u16,
@@ -81,6 +76,9 @@ fn draw_server(f: &mut Frame<CrosstermBackend<Stdout>>, server: &Server, area: R
 fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
     // Calculate the height of each subarea
     let no_of_servers = app.servers.len() as u16;
+
+    app.vertical_scroll_state = app.vertical_scroll_state.content_length(no_of_servers);
+
     if no_of_servers > 0 {
         let subarea_height = area.height / no_of_servers;
 
@@ -93,6 +91,15 @@ fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, 
                 height: subarea_height,
             };
             draw_server(f, &app.servers[i as usize], subarea);
+
+            f.render_stateful_widget(
+                Scrollbar::default()
+                    .orientation(ScrollbarOrientation::VerticalRight)
+                    .begin_symbol(Some("↑"))
+                    .end_symbol(Some("↓")),
+                area,
+                &mut app.vertical_scroll_state,
+            );
         }
     }
 }

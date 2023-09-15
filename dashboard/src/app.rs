@@ -1,3 +1,4 @@
+use ratatui::widgets::ScrollbarState;
 use crate::server::Server;
 
 pub struct App {
@@ -5,6 +6,10 @@ pub struct App {
     pub tabs: TabsState,
     pub should_quit: bool,
     pub servers: Vec<Server>,
+    pub vertical_scroll_state: ScrollbarState,
+    pub vertical_scroll: usize,
+
+
 }
 
 impl App {
@@ -14,6 +19,8 @@ impl App {
             tabs: TabsState::new(),
             should_quit: false,
             servers: vec![],
+            vertical_scroll_state: Default::default(),
+            vertical_scroll: 0,
         }
     }
 
