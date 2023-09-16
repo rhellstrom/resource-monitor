@@ -75,16 +75,15 @@ fn draw_server(f: &mut Frame<CrosstermBackend<Stdout>>, server: &Server, area: R
 
 fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
     let no_of_servers = app.servers.len() as u16;
-
-
+    app.scroll_content_length = no_of_servers;
 
     if no_of_servers > 0 {
-        let position = 2;
+        let position = app.scroll_pos;
+        //TODO: Find a way to to calculate view length based on frame size
         let view_length = 5;
 
         let end_index = position + view_length.min(no_of_servers - position);
-        app.vertical_scroll_state = app.vertical_scroll_state.content_length(no_of_servers);
-        app.vertical_scroll_state = app.vertical_scroll_state.position(position);
+        app.vertical_scroll_state = app.vertical_scroll_state.content_length(app.scroll_content_length);
         app.vertical_scroll_state = app.vertical_scroll_state.viewport_content_length(view_length);
 
 

@@ -7,9 +7,8 @@ pub struct App {
     pub should_quit: bool,
     pub servers: Vec<Server>,
     pub vertical_scroll_state: ScrollbarState,
-    pub vertical_scroll: usize,
-
-
+    pub scroll_pos: u16,
+    pub scroll_content_length: u16,
 }
 
 impl App {
@@ -20,7 +19,8 @@ impl App {
             should_quit: false,
             servers: vec![],
             vertical_scroll_state: Default::default(),
-            vertical_scroll: 0,
+            scroll_pos: 0,
+            scroll_content_length: 0,
         }
     }
 
@@ -36,6 +36,22 @@ impl App {
 
     pub fn on_right(&mut self){
         self.tabs.next();
+    }
+
+    pub fn on_up(&mut self) {
+        //vertical_scroll_state.prev() would be great but fields are private
+        if self.scroll_pos > 0 {
+            self.scroll_pos -= 1;
+            self.vertical_scroll_state = self.vertical_scroll_state.position(self.scroll_pos);
+        }
+    }
+
+    pub fn on_down(&mut self) {
+        //vertical_scroll_state.next() would be great but fields are private
+        if self.scroll_pos < self.scroll_content_length {
+            self.scroll_pos += 1;
+            self.vertical_scroll_state = self.vertical_scroll_state.position(self.scroll_pos);
+        }
     }
 
     pub fn on_tick(&mut self, servers: Vec<Server>) {

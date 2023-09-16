@@ -61,6 +61,8 @@ pub async fn run(servers: Arc<Mutex<Vec<Server>>>, tick_rate: Duration) -> Resul
                         KeyCode::Char(c) => app.on_key(c),
                         KeyCode::Left => app.on_left(),
                         KeyCode::Right => app.on_right(),
+                        KeyCode::Up => app.on_up(),
+                        KeyCode::Down => app.on_down(),
                         _ => {}
                     }
                 }
