@@ -76,18 +76,15 @@ fn draw_server(f: &mut Frame<CrosstermBackend<Stdout>>, server: &Server, area: R
 fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
     let no_of_servers = app.servers.len() as u16;
     app.scroll_content_length = no_of_servers;
-
     if no_of_servers > 0 {
         let position = app.scroll_pos;
-        //TODO: Find a way to to calculate view length based on frame size
-        let view_length = 5;
-
+        let terminal_height = f.size().height;
+        let view_length_fraction = 0.12;  // Adjust this to find a suitable size
+        let view_length = (terminal_height as f64 * view_length_fraction) as u16;
         let end_index = position + view_length.min(no_of_servers - position);
+        let subarea_height = area.height / view_length;
         app.vertical_scroll_state = app.vertical_scroll_state.content_length(app.scroll_content_length);
         app.vertical_scroll_state = app.vertical_scroll_state.viewport_content_length(view_length);
-
-
-        let subarea_height = area.height / view_length;
 
         for i in position ..end_index {
             // Calculate the position and dimensions of each subarea
@@ -101,7 +98,6 @@ fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, 
                 draw_server(f, &app.servers[i as usize], subarea);
             }
         }
-
         f.render_stateful_widget(
             Scrollbar::default()
                 .orientation(ScrollbarOrientation::VerticalRight)
