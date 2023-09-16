@@ -1,8 +1,10 @@
 use std::io::Stdout;
+use std::ops::Index;
 use ratatui::backend::CrosstermBackend;
 use ratatui::Frame;
 use ratatui::layout::Direction::{Horizontal};
 use ratatui::prelude::*;
+//use ratatui::prelude::Marker::Block;
 use ratatui::widgets::*;
 use crate::app::App;
 use crate::server::Server;
@@ -13,7 +15,14 @@ pub fn draw(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App){
         .constraints([Constraint::Length(4), Constraint::Min(0)].as_ref())
         .split(f.size());
     draw_tabs(f, app, chunks[0]);
-    draw_server_overview(f, app, chunks[1]);
+
+    if app.tabs.index == 0 {
+        draw_server_overview(f, app, chunks[1]);
+    }
+    else {
+        draw_detailed_view(f, app, chunks[1]);
+    }
+
 }
 
 fn draw_tabs(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
@@ -107,4 +116,10 @@ fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, 
             &mut app.vertical_scroll_state,
         );
     }
+}
+
+pub fn draw_detailed_view(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
+    let current_index = app.tabs.index - 1; // The overview is always first index
+    let block = Block::default().borders(Borders::ALL).title(app.servers.index(current_index).hostname.clone());
+    f.render_widget(block, area);
 }
