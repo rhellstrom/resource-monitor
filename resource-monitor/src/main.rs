@@ -45,6 +45,5 @@ async fn refresh_loop(resources: Arc<Mutex<Resources>>, update_frequency: u64) {
         sleep(Duration::from_millis(update_frequency)).await;
         let mut resource = resources.lock().unwrap();
         resource.refresh();
-        println!("{:?}", resource);
     }
 }
