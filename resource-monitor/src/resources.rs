@@ -9,8 +9,16 @@ pub struct Resources {
     used_memory: u64,
     total_space: u64,
     available_space: u64,
+    used_swap: u64,
+    total_swap: u64,
     cpu_amount: usize,
     pub cpu_usage: f32,
+    pub cpu_load_per_core: Vec<f32>,
+    pub disk_names: Vec<String>,
+    pub disk_mount: Vec<String>,
+    pub disk_available: Vec<u64>,
+    pub disk_total: Vec<u64>,
+
     #[serde(skip_serializing)]
     system_struct: System,
 }
@@ -20,7 +28,7 @@ impl Resources {
     pub fn new() -> Self {
         let mut sys = get_system();
         sys.refresh_all();
-        let disk_space = disk_info(&mut sys);
+        let disk_space = disk_total_usage(&mut sys);
 
         Resources {
             hostname: sys.host_name().unwrap(),
@@ -28,8 +36,15 @@ impl Resources {
             used_memory: sys.used_memory(),
             total_space: disk_space.0,
             available_space: disk_space.1,
+            used_swap: sys.used_swap(),
+            total_swap: sys.total_swap(),
             cpu_amount: sys.cpus().len(),
             cpu_usage: sys.global_cpu_info().cpu_usage(),
+            cpu_load_per_core: get_cpu_load_per_core(&sys),
+            disk_names: get_disks_names(&mut sys),
+            disk_mount: get_disks_mount(&mut sys),
+            disk_available: get_disks_available(&mut sys),
+            disk_total: get_disks_total(&mut sys),
             system_struct: sys,
         }
 
@@ -37,10 +52,18 @@ impl Resources {
     /// Refreshes the CPU, memory and disk usage
     pub(crate) fn refresh(&mut self) {
         self.system_struct.refresh_cpu();
-        self.cpu_usage = self.system_struct.global_cpu_info().cpu_usage();
         self.system_struct.refresh_memory();
+        self.system_struct.refresh_disks();
+        self.system_struct.refresh_disks_list();
+
+        self.cpu_usage = self.system_struct.global_cpu_info().cpu_usage();
+
+
         self.used_memory = self.system_struct.used_memory();
-        self.available_space = disk_info(&mut self.system_struct).1;
+        self.available_space = disk_total_usage(&mut self.system_struct).1;
+        self.used_swap = self.system_struct.used_swap();
+        self.cpu_load_per_core = get_cpu_load_per_core(&self.system_struct);
+        self.disk_available = get_disks_available(&mut self.system_struct)
     }
 
     pub fn serialize(&self) -> String {
@@ -49,7 +72,7 @@ impl Resources {
 }
 
 /// Iterates through each disk summing up the total and available space on the system
-fn disk_info(sys: &mut System) -> (u64, u64){
+fn disk_total_usage(sys: &mut System) -> (u64, u64){
     sys.refresh_disks();
     let mut total = 0;
     let mut available = 0;
@@ -58,6 +81,50 @@ fn disk_info(sys: &mut System) -> (u64, u64){
         available += disk.available_space();
     }
     (total, available)
+}
+
+fn get_disks_names(sys: &mut System) -> Vec<String> {
+    let mut names = vec![];
+    for disk in sys.disks() {
+        names.push(disk.name().to_string_lossy().to_string()) //This needs to be done cleaner
+    }
+    names
+}
+
+fn get_disks_mount(sys: &mut System) -> Vec<String> {
+    sys.refresh_disks_list();
+    let mut names = vec![];
+    for disk in sys.disks() {
+        names.push(disk.mount_point().to_string_lossy().to_string()) //This needs to be done cleaner
+    }
+    names
+}
+
+fn get_disks_available(sys: &mut System) -> Vec<u64> {
+    sys.refresh_disks_list();
+    let mut names = vec![];
+    for disk in sys.disks() {
+        names.push(disk.available_space()) //This needs to be done cleaner
+    }
+    names
+}
+
+fn get_disks_total(sys: &mut System) -> Vec<u64> {
+    sys.refresh_disks_list();
+    let mut names = vec![];
+    for disk in sys.disks() {
+        names.push(disk.total_space()) //This needs to be done cleaner
+    }
+    names
+}
+
+
+fn get_cpu_load_per_core(sys: &System) -> Vec<f32> {
+    let mut load_per_core = Vec::new();
+    for cpu in sys.cpus() {
+        load_per_core.push(cpu.cpu_usage());
+    }
+    load_per_core
 }
 
 /// Returns a System struct using System::new_with_specifics and fills it with information using refresh.all()
