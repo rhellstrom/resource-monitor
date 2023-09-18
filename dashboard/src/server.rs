@@ -17,6 +17,11 @@ pub struct Server {
     pub available_space: u64,
     pub cpu_amount: usize,
     pub cpu_usage: f32,
+    pub cpu_load_per_core: Vec<f32>,
+    pub disk_names: Vec<String>,
+    pub disk_mount: Vec<String>,
+    pub disk_available: Vec<u64>,
+    pub disk_total: Vec<u64>,
 }
 
 /// Initialises a Vec<Server> with default values and an endpoint for each instance of Server
