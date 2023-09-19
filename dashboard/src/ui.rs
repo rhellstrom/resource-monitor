@@ -4,7 +4,6 @@ use ratatui::backend::CrosstermBackend;
 use ratatui::Frame;
 use ratatui::layout::Direction::{Horizontal};
 use ratatui::prelude::*;
-//use ratatui::prelude::Marker::Block;
 use ratatui::widgets::*;
 use crate::app::App;
 use crate::server::Server;
@@ -122,4 +121,48 @@ pub fn draw_detailed_view(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App
     let current_index = app.tabs.index - 1; // The overview is always first index
     let block = Block::default().borders(Borders::ALL).title(app.servers.index(current_index).hostname.clone());
     f.render_widget(block, area);
+
+    let chunk_height = area.height / 3;
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .margin(0)
+        .constraints([Constraint::Length(chunk_height); 3].as_ref())
+        .split(area);
+
+    draw_cpu_row(f, app, chunks[0]);
+    //draw memory and disk row chunk 1
+    //draw network chunk 2
+}
+
+pub fn draw_cpu_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
+    let chunks = Layout::default()
+        .direction(Horizontal)
+        .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
+        .margin(1)
+        .split(area);
+
+    let block = Block::default().borders(Borders::ALL).title("SPARKLIFE");
+    f.render_widget(block, chunks[0]);
+
+    draw_cpu_list(f, app, chunks[1])
+}
+
+pub fn draw_cpu_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
+    let load_per_cores = &app.servers.get(app.tabs.index).unwrap().cpu_load_per_core;
+    let mut items: Vec<ListItem> = vec![];
+    for (i, &load) in load_per_cores.iter().enumerate() {
+        let mut style = Style::default();
+
+        if load > 90.0 {
+            style = style.fg(Color::Red);
+        } else if load > 80.0 {
+            style = style.fg(Color::Yellow); // Assuming orange is not directly available, using yellow instead
+        }
+
+        let core = ListItem::new(format!("CPU{}  %{:.1}", i, load)).style(style);
+        items.push(core);
+    }
+
+    let list = List::new(items);
+    f.render_widget(list, area)
 }
