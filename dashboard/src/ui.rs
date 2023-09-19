@@ -141,17 +141,16 @@ pub fn draw_cpu_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area
         .margin(1)
         .split(area);
 
-    let block = Block::default().borders(Borders::ALL).title("SPARKLIFE");
-    f.render_widget(block, chunks[0]);
-
+    draw_cpu_sparkline(f, app, chunks[0]);
     draw_cpu_list(f, app, chunks[1])
 }
 
 pub fn draw_cpu_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
-    let load_per_cores = &app.servers.get(app.tabs.index).unwrap().cpu_load_per_core;
+    let server_index = app.tabs.index - 1;
+    let load_per_cores = &app.servers.get(server_index).unwrap().cpu_load_per_core;
     let mut items: Vec<ListItem> = vec![];
 
-    let average = ListItem::new(format!("Avg:     {:.1}%", app.servers.get(app.tabs.index).unwrap().cpu_usage));
+    let average = ListItem::new(format!("Avg:     {:.1}%", app.servers.get(server_index).unwrap().cpu_usage));
     items.push(average);
 
     for (i, &load) in load_per_cores.iter().enumerate() {
@@ -168,4 +167,22 @@ pub fn draw_cpu_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, are
 
     let list = List::new(items).block(Block::default().borders(Borders::ALL).title("CPU LOAD"));
     f.render_widget(list, area)
+}
+
+pub fn draw_cpu_sparkline(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
+    if app.tabs.index > 0 {
+        let current_tab_index = app.tabs.index;
+        if let Some(cpu_sparkline_data) = app.cpu_sparkline_data.get(&(current_tab_index - 1)) {
+            let sparkline = Sparkline::default()
+                .block(
+                    Block::default()
+                        .title("CPU USAGE")
+                        .borders(Borders::ALL),
+                )
+                .data(cpu_sparkline_data)
+                .style(Style::default().fg(Color::Red));
+
+            f.render_widget(sparkline, area);
+        }
+    }
 }
