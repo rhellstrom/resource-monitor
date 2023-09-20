@@ -130,6 +130,7 @@ pub fn draw_detailed_view(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App
         .split(area);
 
     draw_cpu_row(f, app, chunks[0]);
+    //draw_cpu_chart(f, app, chunks[1]);
     //draw memory and disk row chunk 1
     //draw network chunk 2
 }
@@ -141,8 +142,8 @@ pub fn draw_cpu_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area
         .margin(1)
         .split(area);
 
-    draw_cpu_sparkline(f, app, chunks[0]);
-    draw_cpu_list(f, app, chunks[1])
+    draw_cpu_chart(f, app, chunks[0]);
+    draw_cpu_list(f, app, chunks[1]);
 }
 
 pub fn draw_cpu_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
@@ -169,7 +170,7 @@ pub fn draw_cpu_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, are
     f.render_widget(list, area)
 }
 
-pub fn draw_cpu_sparkline(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
+pub fn _draw_cpu_sparkline(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
     if app.tabs.index > 0 {
         let current_tab_index = app.tabs.index;
         if let Some(cpu_sparkline_data) = app.cpu_sparkline_data.get(&(current_tab_index - 1)) {
@@ -180,9 +181,38 @@ pub fn draw_cpu_sparkline(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App
                         .borders(Borders::ALL),
                 )
                 .data(cpu_sparkline_data)
-                .style(Style::default().fg(Color::Red));
+                .style(Style::default().fg(Color::Green));
 
             f.render_widget(sparkline, area);
         }
+    }
+}
+
+pub fn draw_cpu_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
+    let current_tab_index = app.tabs.index;
+    if let Some(cpu_sparkline_data) = app.cpu_sparkline_data.get(&(current_tab_index - 1)) {
+        let data: Vec<(f64, f64)> = cpu_sparkline_data
+            .iter()
+            .enumerate()
+            .map(|(i, &val)| (i as f64, val as f64))
+            .collect();
+
+        let dataset = vec![
+        Dataset::default()
+            .name("data1")
+            .marker(Marker::Braille)
+            .graph_type(GraphType::Line)
+            .style(Style::default().fg(Color::Green))
+            .data(&data)];
+
+
+        let chart = Chart::new(dataset)
+            .block(Block::default().title("CPU Load").borders(Borders::ALL))
+            .x_axis(Axis::default()
+                        .bounds([0.0, cpu_sparkline_data.len() as f64 - 1.0]))
+            .y_axis(Axis::default()
+                .bounds([0.0, 100.0])
+                .labels(["0%", "100%"].iter().cloned().map(Span::from).collect()));
+        f.render_widget(chart, area);
     }
 }
