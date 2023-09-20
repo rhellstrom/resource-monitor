@@ -83,16 +83,16 @@ fn draw_server(f: &mut Frame<CrosstermBackend<Stdout>>, server: &Server, area: R
 
 fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
     let no_of_servers = app.servers.len() as u16;
-    app.scroll_content_length = no_of_servers;
+    app.scroll.scroll_content_length = no_of_servers;
     if no_of_servers > 0 {
-        let position = app.scroll_pos;
+        let position = app.scroll.scroll_pos;
         let terminal_height = f.size().height;
         let view_length_fraction = 0.12;  // Adjust this to find a suitable size
         let view_length = (terminal_height as f64 * view_length_fraction) as u16;
         let end_index = position + view_length.min(no_of_servers - position);
         let subarea_height = area.height / view_length;
-        app.vertical_scroll_state = app.vertical_scroll_state.content_length(app.scroll_content_length);
-        app.vertical_scroll_state = app.vertical_scroll_state.viewport_content_length(view_length);
+        app.scroll.vertical_scroll_state = app.scroll.vertical_scroll_state.content_length(app.scroll.scroll_content_length);
+        app.scroll.vertical_scroll_state = app.scroll.vertical_scroll_state.viewport_content_length(view_length);
 
         for i in position ..end_index {
             // Calculate the position and dimensions of each subarea
@@ -112,7 +112,7 @@ fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, 
                 .begin_symbol(Some("↑"))
                 .end_symbol(Some("↓")),
             area,
-            &mut app.vertical_scroll_state,
+            &mut app.scroll.vertical_scroll_state,
         );
     }
 }

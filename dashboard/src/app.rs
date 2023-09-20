@@ -7,9 +7,7 @@ pub struct App {
     pub tabs: TabsState,
     pub should_quit: bool,
     pub servers: Vec<Server>,
-    pub vertical_scroll_state: ScrollbarState,
-    pub scroll_pos: u16,
-    pub scroll_content_length: u16,
+    pub scroll: ScrollState,
     pub cpu_sparkline_data: HashMap<usize, Vec<u64>>,
 }
 
@@ -20,9 +18,7 @@ impl App {
             tabs: TabsState::new(),
             should_quit: false,
             servers: vec![],
-            vertical_scroll_state: Default::default(),
-            scroll_pos: 0,
-            scroll_content_length: 0,
+            scroll: ScrollState::new(),
             cpu_sparkline_data: HashMap::new(),
         }
     }
@@ -42,19 +38,11 @@ impl App {
     }
 
     pub fn on_up(&mut self) {
-        //vertical_scroll_state.prev() would be great but fields are private
-        if self.scroll_pos > 0 {
-            self.scroll_pos -= 1;
-            self.vertical_scroll_state = self.vertical_scroll_state.position(self.scroll_pos);
-        }
+        self.scroll.up()
     }
 
     pub fn on_down(&mut self) {
-        //vertical_scroll_state.next() would be great but fields are private
-        if self.scroll_pos < self.scroll_content_length {
-            self.scroll_pos += 1;
-            self.vertical_scroll_state = self.vertical_scroll_state.position(self.scroll_pos);
-        }
+        self.scroll.down()
     }
 
     pub fn on_tick(&mut self, servers: Vec<Server>) {
@@ -71,7 +59,7 @@ impl App {
                     .entry(i)
                     .or_insert_with(Vec::new);
 
-                // Add the server's CPU usage and keep at most 20 values
+                // Add the server's CPU usage and keep at most 200 values
                 sparkline_data.push(server.cpu_usage as u64);
                 if sparkline_data.len() > 200 {
                     sparkline_data.remove(0);
@@ -81,6 +69,36 @@ impl App {
     }
 }
 
+pub struct ScrollState {
+    pub vertical_scroll_state: ScrollbarState,
+    pub scroll_pos: u16,
+    pub scroll_content_length: u16,
+}
+
+impl ScrollState{
+    pub fn new() -> ScrollState {
+        ScrollState{
+            vertical_scroll_state: Default::default(),
+            scroll_pos: 0,
+            scroll_content_length: 0,
+        }
+    }
+
+    pub fn up(&mut self){
+        if self.scroll_pos > 0 {
+            self.scroll_pos -= 1;
+            self.vertical_scroll_state = self.vertical_scroll_state.position(self.scroll_pos);
+        }
+    }
+
+    pub fn down(&mut self) {
+        if self.scroll_pos < self.scroll_content_length {
+            self.scroll_pos += 1;
+            self.vertical_scroll_state = self.vertical_scroll_state.position(self.scroll_pos);
+        }
+    }
+
+}
 
 pub struct TabsState {
     pub titles: Vec<String>,
