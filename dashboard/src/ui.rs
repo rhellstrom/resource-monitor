@@ -199,7 +199,6 @@ pub fn draw_cpu_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, ar
 
         let dataset = vec![
         Dataset::default()
-            .name("data1")
             .marker(Marker::Braille)
             .graph_type(GraphType::Line)
             .style(Style::default().fg(Color::Green))

@@ -34,6 +34,7 @@ async fn main() {
 
     //Bind to localhost for now
     let addr = SocketAddr::from(([127, 0, 0, 1], args.port));
+    //let addr = SocketAddr::from(([0, 0, 0, 0], args.port));
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
