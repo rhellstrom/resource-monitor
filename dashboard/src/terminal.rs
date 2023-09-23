@@ -41,6 +41,7 @@ pub fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Re
 /// Runs the TUI loop. We setup the terminal environment, draw the application and react to user input
 /// and updates the data to be drawn on each tick. Once loop is exited we restore the terminal
 // TODO: Ensure we restore the terminal if we panic
+// TODO: Only ever update app.servers when we've actually fetched information instead of on each tick
 pub async fn run(servers: Arc<Mutex<Vec<Server>>>, tick_rate: Duration) -> Result<()> {
     let mut terminal = setup_terminal()?;
     let mut app = App::new(String::from("Dashboard"));
