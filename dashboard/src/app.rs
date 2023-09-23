@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use ratatui::widgets::ScrollbarState;
 use crate::server::Server;
-use crate::util::used_percentage;
+use crate::util::{used_as_percentage};
 
 pub struct App {
     pub title: String,
@@ -81,7 +81,7 @@ impl App {
                     .or_insert_with(Vec::new);
 
                 // Add the server's RAM usage and keep at most 200 values
-                chart_data.push(used_percentage(server.used_memory, server.total_memory) as u64);
+                chart_data.push(used_as_percentage(server.used_memory, server.total_memory) as u64);
                 if chart_data.len() > 200 {
                     chart_data.remove(0);
                 }

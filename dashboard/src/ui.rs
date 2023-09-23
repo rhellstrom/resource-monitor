@@ -5,9 +5,10 @@ use ratatui::Frame;
 use ratatui::layout::Direction::{Horizontal};
 use ratatui::prelude::*;
 use ratatui::widgets::*;
+use ratatui::widgets::block::{Position, Title};
 use crate::app::App;
 use crate::server::Server;
-use crate::util::{total_memory, used_percentage};
+use crate::util::{bytes_to_gib, used_as_percentage, used_percentage};
 
 pub fn draw(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App){
     let chunks = Layout::default()
@@ -60,7 +61,6 @@ fn draw_gauge(f: &mut Frame<CrosstermBackend<Stdout>>, percentage: u16, title: &
     f.render_widget(gauge, area);
 }
 
-
 fn draw_server(f: &mut Frame<CrosstermBackend<Stdout>>, server: &Server, area: Rect) {
     let block = Block::default().borders(Borders::ALL).title(server.hostname.clone());
     f.render_widget(block, area);
@@ -73,7 +73,7 @@ fn draw_server(f: &mut Frame<CrosstermBackend<Stdout>>, server: &Server, area: R
         .split(area);
 
     draw_gauge(f, server.cpu_usage as u16, "CPU Usage", gauge_chunks[0]);
-    draw_gauge(f, total_memory(server.used_memory, server.total_memory) as u16,
+    draw_gauge(f, used_as_percentage(server.used_memory, server.total_memory) as u16,
                "Memory Usage", gauge_chunks[1]);
     draw_gauge(f, used_percentage(server.available_space, server.total_space) as u16,
                "Disk Usage", gauge_chunks[2]);
@@ -200,6 +200,10 @@ pub fn _draw_cpu_sparkline(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut Ap
 pub fn draw_ram_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
     let current_tab_index = app.tabs.index;
     if let Some(ram_data) = app.ram_chart_data.get(&(current_tab_index - 1)) {
+        let used = bytes_to_gib(app.servers.get(current_tab_index - 1).unwrap().used_memory);
+        let total = bytes_to_gib(app.servers.get(current_tab_index - 1).unwrap().total_memory);
+        let percentage = used_as_percentage(used as u64, total as u64);
+
         let data: Vec<(f64, f64)> = ram_data
             .iter()
             .enumerate()
@@ -213,14 +217,25 @@ pub fn draw_ram_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, ar
                 .style(Style::default().fg(Color::Blue))
                 .data(&data)];
 
-
         let chart = Chart::new(dataset)
-            .block(Block::default().title("Memory usage").borders(Borders::ALL))
+            .block(Block::new()
+                .borders(Borders::ALL)
+                .title(
+                    Title::from("RAM Usage")
+                        .position(Position::Top)
+                        .alignment(Alignment::Left),
+                )
+                .title(
+                    Title::from(format!("{:.1}%\t {:.1}GiB/{:.1}GiB", percentage, used, total))
+                        .position(Position::Top)
+                        .alignment(Alignment::Right),
+                ))
             .x_axis(Axis::default()
                 .bounds([0.0, ram_data.len() as f64 - 1.0]))
             .y_axis(Axis::default()
                 .bounds([0.0, 100.0])
                 .labels(["0%", "100%"].iter().cloned().map(Span::from).collect()));
+
         f.render_widget(chart, area);
     }
 }
@@ -242,9 +257,8 @@ pub fn draw_cpu_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, ar
             .style(Style::default().fg(Color::Green))
             .data(&data)];
 
-
         let chart = Chart::new(dataset)
-            .block(Block::default().title("CPU Load").borders(Borders::ALL))
+            .block(Block::default().title("CPU Usage").borders(Borders::ALL))
             .x_axis(Axis::default()
                         .bounds([0.0, cpu_sparkline_data.len() as f64 - 1.0]))
             .y_axis(Axis::default()
