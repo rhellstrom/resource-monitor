@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use ratatui::widgets::ScrollbarState;
 use crate::server::Server;
+use crate::util::used_percentage;
 
 pub struct App {
     pub title: String,
@@ -8,7 +9,8 @@ pub struct App {
     pub should_quit: bool,
     pub servers: Vec<Server>,
     pub scroll: ScrollState,
-    pub cpu_sparkline_data: HashMap<usize, Vec<u64>>,
+    pub cpu_chart_data: HashMap<usize, Vec<u64>>,
+    pub ram_chart_data: HashMap<usize, Vec<u64>>,
 }
 
 impl App {
@@ -19,7 +21,8 @@ impl App {
             should_quit: false,
             servers: vec![],
             scroll: ScrollState::new(),
-            cpu_sparkline_data: HashMap::new(),
+            cpu_chart_data: HashMap::new(),
+            ram_chart_data: HashMap::new(),
         }
     }
 
@@ -48,21 +51,39 @@ impl App {
     pub fn on_tick(&mut self, servers: Vec<Server>) {
         self.tabs.update_tabs(&servers);    //Would prefer static tab names
         self.servers = servers;
-        self.update_cpu_sparkline();
+        self.update_cpu_chart_data();
+        self.update_ram_chart_data();
     }
 
-    pub fn update_cpu_sparkline(&mut self){
+    pub fn update_cpu_chart_data(&mut self){
         for (i, server) in self.servers.iter().enumerate() {
             // Ensure the server index is within bounds
             if i < self.servers.len() {
-                let sparkline_data = self.cpu_sparkline_data
+                let chart_data = self.cpu_chart_data
                     .entry(i)
                     .or_insert_with(Vec::new);
 
                 // Add the server's CPU usage and keep at most 200 values
-                sparkline_data.push(server.cpu_usage as u64);
-                if sparkline_data.len() > 200 {
-                    sparkline_data.remove(0);
+                chart_data.push(server.cpu_usage as u64);
+                if chart_data.len() > 200 {
+                    chart_data.remove(0);
+                }
+            }
+        }
+    }
+
+    pub fn update_ram_chart_data(&mut self){
+        for (i, server) in self.servers.iter().enumerate() {
+            // Ensure the server index is within bounds
+            if i < self.servers.len() {
+                let chart_data = self.ram_chart_data
+                    .entry(i)
+                    .or_insert_with(Vec::new);
+
+                // Add the server's RAM usage and keep at most 200 values
+                chart_data.push(used_percentage(server.used_memory, server.total_memory) as u64);
+                if chart_data.len() > 200 {
+                    chart_data.remove(0);
                 }
             }
         }
@@ -97,7 +118,6 @@ impl ScrollState{
             self.vertical_scroll_state = self.vertical_scroll_state.position(self.scroll_pos);
         }
     }
-
 }
 
 pub struct TabsState {

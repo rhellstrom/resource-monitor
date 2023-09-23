@@ -125,13 +125,12 @@ pub fn draw_detailed_view(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App
     let chunk_height = area.height / 3;
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .margin(0)
+        .margin(1)
         .constraints([Constraint::Length(chunk_height); 3].as_ref())
         .split(area);
 
     draw_cpu_row(f, app, chunks[0]);
-    //draw_cpu_chart(f, app, chunks[1]);
-    //draw memory and disk row chunk 1
+    draw_memory_row(f, app, chunks[1]);
     //draw network chunk 2
 }
 
@@ -139,11 +138,21 @@ pub fn draw_cpu_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area
     let chunks = Layout::default()
         .direction(Horizontal)
         .constraints([Constraint::Percentage(80), Constraint::Percentage(20)].as_ref())
-        .margin(1)
+        .margin(0)
         .split(area);
 
     draw_cpu_chart(f, app, chunks[0]);
     draw_cpu_list(f, app, chunks[1]);
+}
+
+pub fn draw_memory_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
+    let chunks = Layout::default()
+        .direction(Horizontal)
+        .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
+        .margin(0)
+        .split(area);
+
+    draw_ram_chart(f, app, chunks[0]);
 }
 
 pub fn draw_cpu_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
@@ -173,7 +182,7 @@ pub fn draw_cpu_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, are
 pub fn _draw_cpu_sparkline(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
     if app.tabs.index > 0 {
         let current_tab_index = app.tabs.index;
-        if let Some(cpu_sparkline_data) = app.cpu_sparkline_data.get(&(current_tab_index - 1)) {
+        if let Some(cpu_sparkline_data) = app.cpu_chart_data.get(&(current_tab_index - 1)) {
             let sparkline = Sparkline::default()
                 .block(
                     Block::default()
@@ -188,9 +197,38 @@ pub fn _draw_cpu_sparkline(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut Ap
     }
 }
 
+pub fn draw_ram_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
+    let current_tab_index = app.tabs.index;
+    if let Some(ram_data) = app.ram_chart_data.get(&(current_tab_index - 1)) {
+        let data: Vec<(f64, f64)> = ram_data
+            .iter()
+            .enumerate()
+            .map(|(i, &val)| (i as f64, val as f64))
+            .collect();
+
+        let dataset = vec![
+            Dataset::default()
+                .marker(Marker::Braille)
+                .graph_type(GraphType::Line)
+                .style(Style::default().fg(Color::Blue))
+                .data(&data)];
+
+
+        let chart = Chart::new(dataset)
+            .block(Block::default().title("Memory usage").borders(Borders::ALL))
+            .x_axis(Axis::default()
+                .bounds([0.0, ram_data.len() as f64 - 1.0]))
+            .y_axis(Axis::default()
+                .bounds([0.0, 100.0])
+                .labels(["0%", "100%"].iter().cloned().map(Span::from).collect()));
+        f.render_widget(chart, area);
+    }
+}
+
+
 pub fn draw_cpu_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
     let current_tab_index = app.tabs.index;
-    if let Some(cpu_sparkline_data) = app.cpu_sparkline_data.get(&(current_tab_index - 1)) {
+    if let Some(cpu_sparkline_data) = app.cpu_chart_data.get(&(current_tab_index - 1)) {
         let data: Vec<(f64, f64)> = cpu_sparkline_data
             .iter()
             .enumerate()
