@@ -179,24 +179,6 @@ pub fn draw_cpu_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, are
     f.render_widget(list, area)
 }
 
-pub fn _draw_cpu_sparkline(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
-    if app.tabs.index > 0 {
-        let current_tab_index = app.tabs.index;
-        if let Some(cpu_sparkline_data) = app.cpu_chart_data.get(&(current_tab_index - 1)) {
-            let sparkline = Sparkline::default()
-                .block(
-                    Block::default()
-                        .title("CPU USAGE")
-                        .borders(Borders::ALL),
-                )
-                .data(cpu_sparkline_data)
-                .style(Style::default().fg(Color::Green));
-
-            f.render_widget(sparkline, area);
-        }
-    }
-}
-
 pub fn draw_ram_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
     let current_tab_index = app.tabs.index;
     if let Some(ram_data) = app.ram_chart_data.get(&(current_tab_index - 1)) {
@@ -231,7 +213,8 @@ pub fn draw_ram_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, ar
                         .alignment(Alignment::Right),
                 ))
             .x_axis(Axis::default()
-                .bounds([0.0, ram_data.len() as f64 - 1.0]))
+                .bounds([0.0, ram_data.len() as f64 - 1.0])
+                .labels(["60s", "0s"].iter().cloned().map(Span::from).collect()))
             .y_axis(Axis::default()
                 .bounds([0.0, 100.0])
                 .labels(["0%", "100%"].iter().cloned().map(Span::from).collect()));
@@ -239,7 +222,6 @@ pub fn draw_ram_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, ar
         f.render_widget(chart, area);
     }
 }
-
 
 pub fn draw_cpu_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
     let current_tab_index = app.tabs.index;

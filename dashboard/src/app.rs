@@ -60,6 +60,7 @@ impl App {
         self.update_ram_chart_data();
     }
 
+    //TODO: Make the following functions into something more generic to avoid repetition
     /// Pushes last cpu_data into the vector held in our hashmap and removes all data older than 60 seconds
     pub fn update_cpu_chart_data(&mut self){
         for (i, server) in self.servers.iter().enumerate() {
@@ -76,19 +77,18 @@ impl App {
             }
         }
     }
-
+    /// Pushes last RAM data into the vector held in our hashmap and removes all data older than 60 seconds
     pub fn update_ram_chart_data(&mut self){
         for (i, server) in self.servers.iter().enumerate() {
-            // Ensure the server index is within bounds
             if i < self.servers.len() {
                 let chart_data = self.ram_chart_data
                     .entry(i)
-                    .or_insert_with(Vec::new);
+                    .or_insert_with(|| vec![0; self.max_chart_data_points]);
 
-                // Add the server's RAM usage and keep at most 200 values
                 chart_data.push(used_as_percentage(server.used_memory as f64, server.total_memory as f64) as u64);
-                if chart_data.len() > 200 {
-                    chart_data.remove(0);
+                if chart_data.len() > self.max_chart_data_points {
+                    let index = chart_data.len() - self.max_chart_data_points;
+                    chart_data.drain(..index);
                 }
             }
         }
