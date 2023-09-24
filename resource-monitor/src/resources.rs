@@ -18,6 +18,8 @@ pub struct Resources {
     pub disk_mount: Vec<String>,
     pub disk_available: Vec<u64>,
     pub disk_total: Vec<u64>,
+    uptime: u64,
+    os_version: String,
 
     #[serde(skip_serializing)]
     system_struct: System,
@@ -29,6 +31,7 @@ impl Resources {
         let mut sys = get_system();
         sys.refresh_all();
         let disk_space = disk_total_usage(&mut sys);
+        let os_name = sys.long_os_version().unwrap_or_else(|| String::from("Unknown"));
 
         Resources {
             hostname: sys.host_name().unwrap(),
@@ -45,10 +48,13 @@ impl Resources {
             disk_mount: get_disks_mount(&mut sys),
             disk_available: get_disks_available(&mut sys),
             disk_total: get_disks_total(&mut sys),
+            uptime: sys.uptime(),
+            os_version: os_name,
             system_struct: sys,
-        }
 
+        }
     }
+
     /// Refreshes the CPU, memory and disk usage
     pub(crate) fn refresh(&mut self) {
         self.system_struct.refresh_cpu();
