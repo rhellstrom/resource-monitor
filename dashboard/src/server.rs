@@ -41,15 +41,16 @@ pub fn init_with_endpoint(endpoints: Vec<String>) -> Vec<Server> {
 /// Iterates through the vector of Server and makes a GET request to each endpoint
 /// and updates the struct if we got a status code 200 in the response.
 /// Otherwise we silently fail
-//TODO: Handle failed serialisation
 async fn get_servers(servers: &mut [Server], client: &Client){
     for server in servers.iter_mut() {
         let endpoint = server.endpoint.clone();
         if let Ok(response) = client.get(&endpoint).send().await {
             if response.status() == StatusCode::OK {
                 let body = response.text().await.unwrap();
-                *server = serde_json::from_str(&body).unwrap();
-                server.endpoint = endpoint;
+                if let Ok(deserialized_server) = serde_json::from_str(&body) {
+                    *server = deserialized_server;
+                    server.endpoint = endpoint;
+                }
             }
         }
     }
