@@ -250,8 +250,7 @@ pub fn draw_cpu_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, ar
             .map(|(i, &val)| (i as f64, val as f64))
             .collect();
 
-        let dataset = vec![
-        Dataset::default()
+        let dataset = vec![Dataset::default()
             .marker(Marker::Braille)
             .graph_type(GraphType::Line)
             .style(Style::default().fg(Color::Green))
@@ -260,10 +259,12 @@ pub fn draw_cpu_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, ar
         let chart = Chart::new(dataset)
             .block(Block::default().title("CPU Usage").borders(Borders::ALL))
             .x_axis(Axis::default()
-                        .bounds([0.0, cpu_sparkline_data.len() as f64 - 1.0]))
+                .bounds([0.0, (data.len() - 1) as f64])
+                .labels(["60s", "0s"].iter().cloned().map(Span::from).collect()))
             .y_axis(Axis::default()
                 .bounds([0.0, 100.0])
                 .labels(["0%", "100%"].iter().cloned().map(Span::from).collect()));
+
         f.render_widget(chart, area);
     }
 }

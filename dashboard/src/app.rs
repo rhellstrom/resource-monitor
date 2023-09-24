@@ -5,24 +5,29 @@ use crate::util::{used_as_percentage};
 
 pub struct App {
     pub title: String,
+    pub tick_rate: u64,
     pub tabs: TabsState,
     pub should_quit: bool,
     pub servers: Vec<Server>,
     pub scroll: ScrollState,
     pub cpu_chart_data: HashMap<usize, Vec<u64>>,
     pub ram_chart_data: HashMap<usize, Vec<u64>>,
+    pub max_chart_data_points: usize,
+
 }
 
 impl App {
-    pub fn new(title: String) -> App {
+    pub fn new(title: String, tick_rate: u64) -> App {
         App {
             title,
+            tick_rate,
             tabs: TabsState::new(),
             should_quit: false,
             servers: vec![],
             scroll: ScrollState::new(),
             cpu_chart_data: HashMap::new(),
             ram_chart_data: HashMap::new(),
+            max_chart_data_points: (60 * 1000 / tick_rate) as usize,
         }
     }
 
@@ -55,18 +60,18 @@ impl App {
         self.update_ram_chart_data();
     }
 
+    /// Pushes last cpu_data into the vector held in our hashmap and removes all data older than 60 seconds
     pub fn update_cpu_chart_data(&mut self){
         for (i, server) in self.servers.iter().enumerate() {
-            // Ensure the server index is within bounds
             if i < self.servers.len() {
                 let chart_data = self.cpu_chart_data
                     .entry(i)
-                    .or_insert_with(Vec::new);
+                    .or_insert_with(|| vec![0; self.max_chart_data_points]);
 
-                // Add the server's CPU usage and keep at most 200 values
                 chart_data.push(server.cpu_usage as u64);
-                if chart_data.len() > 200 {
-                    chart_data.remove(0);
+                if chart_data.len() > self.max_chart_data_points {
+                    let index = chart_data.len() - self.max_chart_data_points;
+                    chart_data.drain(..index);
                 }
             }
         }
