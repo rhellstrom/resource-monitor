@@ -73,7 +73,7 @@ fn draw_server(f: &mut Frame<CrosstermBackend<Stdout>>, server: &Server, area: R
         .split(area);
 
     draw_gauge(f, server.cpu_usage as u16, "CPU Usage", gauge_chunks[0]);
-    draw_gauge(f, used_as_percentage(server.used_memory, server.total_memory) as u16,
+    draw_gauge(f, used_as_percentage(server.used_memory as f64, server.total_memory as f64) as u16,
                "Memory Usage", gauge_chunks[1]);
     draw_gauge(f, used_percentage(server.available_space, server.total_space) as u16,
                "Disk Usage", gauge_chunks[2]);
@@ -202,7 +202,7 @@ pub fn draw_ram_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, ar
     if let Some(ram_data) = app.ram_chart_data.get(&(current_tab_index - 1)) {
         let used = bytes_to_gib(app.servers.get(current_tab_index - 1).unwrap().used_memory);
         let total = bytes_to_gib(app.servers.get(current_tab_index - 1).unwrap().total_memory);
-        let percentage = used_as_percentage(used as u64, total as u64);
+        let percentage = used_as_percentage(used, total);
 
         let data: Vec<(f64, f64)> = ram_data
             .iter()

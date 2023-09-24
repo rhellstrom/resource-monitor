@@ -1,6 +1,6 @@
 /// Shows the total usage as percentage
-pub fn used_as_percentage(used: u64, total: u64) -> f64 {
-    (used as f64 / total as f64) * 100.0
+pub fn used_as_percentage(used: f64, total: f64) -> f64 {
+    (used / total) * 100.0
 }
 
 /// Calculate how much space is used and returns it as percentage

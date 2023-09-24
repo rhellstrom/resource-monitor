@@ -86,7 +86,7 @@ impl App {
                     .or_insert_with(Vec::new);
 
                 // Add the server's RAM usage and keep at most 200 values
-                chart_data.push(used_as_percentage(server.used_memory, server.total_memory) as u64);
+                chart_data.push(used_as_percentage(server.used_memory as f64, server.total_memory as f64) as u64);
                 if chart_data.len() > 200 {
                     chart_data.remove(0);
                 }
