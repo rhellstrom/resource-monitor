@@ -22,6 +22,8 @@ pub struct Server {
     pub disk_mount: Vec<String>,
     pub disk_available: Vec<u64>,
     pub disk_total: Vec<u64>,
+    pub uptime: u64,
+    pub os_version: String,
 }
 
 /// Initialises a Vec<Server> with default values and an endpoint for each instance of Server
@@ -39,6 +41,7 @@ pub fn init_with_endpoint(endpoints: Vec<String>) -> Vec<Server> {
 /// Iterates through the vector of Server and makes a GET request to each endpoint
 /// and updates the struct if we got a status code 200 in the response.
 /// Otherwise we silently fail
+//TODO: Handle failed serialisation
 async fn get_servers(servers: &mut [Server], client: &Client){
     for server in servers.iter_mut() {
         let endpoint = server.endpoint.clone();
