@@ -137,7 +137,7 @@ pub fn draw_detailed_view(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App
 pub fn draw_cpu_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
     let chunks = Layout::default()
         .direction(Horizontal)
-        .constraints([Constraint::Percentage(80), Constraint::Percentage(20)].as_ref())
+        .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
         .margin(0)
         .split(area);
 
@@ -155,28 +155,35 @@ pub fn draw_memory_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, a
     draw_ram_chart(f, app, chunks[0]);
 }
 
+
 pub fn draw_cpu_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
     let server_index = app.tabs.index - 1;
     let load_per_cores = &app.servers.get(server_index).unwrap().cpu_load_per_core;
-    let mut items: Vec<ListItem> = vec![];
+    let mut cpu_cores: Vec<String> = vec![];
 
-    let average = ListItem::new(format!("Avg:     {:.1}%", app.servers.get(server_index).unwrap().cpu_usage));
-    items.push(average);
-
+    cpu_cores.push(format!("Avg:     {:.1}%", app.servers.get(server_index).unwrap().cpu_usage));
     for (i, &load) in load_per_cores.iter().enumerate() {
-        let mut style = Style::default();
-        if load > 90.0 {
-            style = style.fg(Color::Red);
-        } else if load > 80.0 {
-            style = style.fg(Color::Yellow);
-        }
-
-        let core = ListItem::new(format!("CPU{}     {:.1}%", i, load)).style(style);
-        items.push(core);
+        cpu_cores.push(format!("CPU{}     {:.1}%", i, load))
     }
 
-    let list = List::new(items).block(Block::default().borders(Borders::ALL).title("CPU LOAD"));
-    f.render_widget(list, area)
+    app.cpu_list_state.items = cpu_cores.clone();
+
+    let items: Vec<ListItem> = app
+        .cpu_list_state
+        .items
+        .iter()
+        .map(|i| ListItem::new(vec![text::Line::from(i.clone())]))
+        .collect();
+
+    let list = List::new(items)
+        .block(Block::default()
+            .borders(Borders::ALL)
+            .title("CPU Load"))
+        .highlight_style(Style::default().add_modifier(Modifier::BOLD))
+        .highlight_symbol("> ");
+
+    app.cpu_list_state.state.select(Some(7));
+    f.render_stateful_widget(list, area, &mut app.cpu_list_state.state);
 }
 
 pub fn draw_ram_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {

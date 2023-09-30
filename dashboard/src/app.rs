@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use ratatui::widgets::ScrollbarState;
+use ratatui::widgets::{ListItem, ListState, ScrollbarState};
 use crate::server::Server;
 use crate::util::{used_as_percentage};
 
@@ -13,7 +13,7 @@ pub struct App {
     pub cpu_chart_data: HashMap<usize, Vec<u64>>,
     pub ram_chart_data: HashMap<usize, Vec<u64>>,
     pub max_chart_data_points: usize,
-
+    pub cpu_list_state: StatefulList,
 }
 
 impl App {
@@ -28,6 +28,7 @@ impl App {
             cpu_chart_data: HashMap::new(),
             ram_chart_data: HashMap::new(),
             max_chart_data_points: (60 * 1000 / tick_rate) as usize,
+            cpu_list_state: StatefulList::new(),
         }
     }
 
@@ -154,6 +155,49 @@ impl TabsState {
         self.titles = names;
     }
 }
+
+pub struct StatefulList {
+    pub state: ListState,
+    pub items: Vec<String>,
+}
+
+impl StatefulList{
+    pub fn new() -> StatefulList {
+        StatefulList {
+            state: ListState::default(),
+            items: vec![],
+        }
+    }
+
+    pub fn next(&mut self) {
+        let i = match self.state.selected() {
+            Some(i) => {
+                if i >= self.items.len() - 1 {
+                    0
+                } else {
+                    i + 1
+                }
+            }
+            None => 0,
+        };
+        self.state.select(Some(i));
+    }
+
+    pub fn previous(&mut self) {
+        let i = match self.state.selected() {
+            Some(i) => {
+                if i == 0 {
+                    self.items.len() - 1
+                } else {
+                    i - 1
+                }
+            }
+            None => 0,
+        };
+        self.state.select(Some(i));
+    }
+}
+
 
 
 
