@@ -131,7 +131,6 @@ pub fn draw_detailed_view(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App
 
     draw_cpu_row(f, app, chunks[0]);
     draw_memory_row(f, app, chunks[1]);
-    //draw network chunk 2
 }
 
 pub fn draw_cpu_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
@@ -165,8 +164,7 @@ pub fn draw_cpu_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, are
     for (i, &load) in load_per_cores.iter().enumerate() {
         cpu_cores.push(format!("CPU{}     {:.1}%", i, load))
     }
-
-    app.cpu_list_state.items = cpu_cores.clone();
+    app.cpu_list_state.items = cpu_cores;
 
     let items: Vec<ListItem> = app
         .cpu_list_state
@@ -182,7 +180,6 @@ pub fn draw_cpu_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, are
         .highlight_style(Style::default().add_modifier(Modifier::BOLD))
         .highlight_symbol("> ");
 
-    app.cpu_list_state.state.select(Some(7));
     f.render_stateful_widget(list, area, &mut app.cpu_list_state.state);
 }
 

@@ -40,18 +40,30 @@ impl App {
 
     pub fn on_left(&mut self){
         self.tabs.previous();
+        self.cpu_list_state.state.select(Some(0));
     }
 
     pub fn on_right(&mut self){
         self.tabs.next();
+        self.cpu_list_state.state.select(Some(0));
     }
 
     pub fn on_up(&mut self) {
-        self.scroll.up()
+        if self.tabs.index == 0 {
+            self.scroll.up()
+        }
+        else {
+            self.cpu_list_state.previous();
+        }
     }
 
     pub fn on_down(&mut self) {
-        self.scroll.down()
+        if self.tabs.index == 0 {
+            self.scroll.down()
+        }
+        else {
+            self.cpu_list_state.next();
+        }
     }
 
     pub fn on_tick(&mut self, servers: Vec<Server>) {
