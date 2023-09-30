@@ -136,12 +136,12 @@ pub fn draw_detailed_view(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App
 pub fn draw_cpu_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
     let chunks = Layout::default()
         .direction(Horizontal)
-        .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
+        .constraints([Constraint::Percentage(80), Constraint::Percentage(20)].as_ref())
         .margin(0)
         .split(area);
 
     draw_cpu_chart(f, app, chunks[0]);
-    draw_cpu_list(f, app, chunks[1]);
+    draw_cpu_table(f, app, chunks[1]);
 }
 
 pub fn draw_memory_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
@@ -152,35 +152,6 @@ pub fn draw_memory_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, a
         .split(area);
 
     draw_ram_chart(f, app, chunks[0]);
-}
-
-
-pub fn draw_cpu_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
-    let server_index = app.tabs.index - 1;
-    let load_per_cores = &app.servers.get(server_index).unwrap().cpu_load_per_core;
-    let mut cpu_cores: Vec<String> = vec![];
-
-    cpu_cores.push(format!("Avg:     {:.1}%", app.servers.get(server_index).unwrap().cpu_usage));
-    for (i, &load) in load_per_cores.iter().enumerate() {
-        cpu_cores.push(format!("CPU{}     {:.1}%", i, load))
-    }
-    app.cpu_list_state.items = cpu_cores;
-
-    let items: Vec<ListItem> = app
-        .cpu_list_state
-        .items
-        .iter()
-        .map(|i| ListItem::new(vec![text::Line::from(i.clone())]))
-        .collect();
-
-    let list = List::new(items)
-        .block(Block::default()
-            .borders(Borders::ALL)
-            .title("CPU Load"))
-        .highlight_style(Style::default().add_modifier(Modifier::BOLD))
-        .highlight_symbol("> ");
-
-    f.render_stateful_widget(list, area, &mut app.cpu_list_state.state);
 }
 
 pub fn draw_ram_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
@@ -253,4 +224,34 @@ pub fn draw_cpu_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, ar
 
         f.render_widget(chart, area);
     }
+}
+
+
+pub fn draw_cpu_table(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
+    let server_index = app.tabs.index - 1;
+    let load_per_cores = &app.servers.get(server_index).unwrap().cpu_load_per_core;
+
+    let mut rows: Vec<Row> = vec![];
+    let header_row = Row::new(vec!["CPU", "Use"])
+        .style(Style::default())
+        .height(1);
+
+    for (i, &load) in load_per_cores.iter().enumerate() {
+        let mut cpu_core_row = vec![];
+        cpu_core_row.push(i.to_string());
+        cpu_core_row.push(format!("{:.1}%", load));
+        rows.push(Row::new(cpu_core_row.clone()));
+    }
+    app.cpu_table.size = rows.len();
+
+    let table = Table::new(rows)
+        .header(header_row)
+        .block(Block::default()
+            .borders(Borders::ALL))
+        .highlight_style(Style::default().add_modifier(Modifier::BOLD))
+        .widths(&[
+            Constraint::Percentage(50),
+            Constraint::Percentage(50)
+        ]);
+    f.render_stateful_widget(table, area, &mut app.cpu_table.state);
 }

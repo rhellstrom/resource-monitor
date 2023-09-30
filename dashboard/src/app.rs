@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use ratatui::widgets::{ListItem, ListState, ScrollbarState};
+use ratatui::widgets::{ScrollbarState, TableState};
 use crate::server::Server;
 use crate::util::{used_as_percentage};
 
@@ -13,7 +13,7 @@ pub struct App {
     pub cpu_chart_data: HashMap<usize, Vec<u64>>,
     pub ram_chart_data: HashMap<usize, Vec<u64>>,
     pub max_chart_data_points: usize,
-    pub cpu_list_state: StatefulList,
+    pub cpu_table: CpuTable,
 }
 
 impl App {
@@ -28,7 +28,7 @@ impl App {
             cpu_chart_data: HashMap::new(),
             ram_chart_data: HashMap::new(),
             max_chart_data_points: (60 * 1000 / tick_rate) as usize,
-            cpu_list_state: StatefulList::new(),
+            cpu_table: CpuTable::new(),
         }
     }
 
@@ -40,12 +40,12 @@ impl App {
 
     pub fn on_left(&mut self){
         self.tabs.previous();
-        self.cpu_list_state.state.select(Some(0));
+        self.cpu_table.state.select(Some(0));
     }
 
     pub fn on_right(&mut self){
         self.tabs.next();
-        self.cpu_list_state.state.select(Some(0));
+        self.cpu_table.state.select(Some(0));
     }
 
     pub fn on_up(&mut self) {
@@ -53,7 +53,7 @@ impl App {
             self.scroll.up()
         }
         else {
-            self.cpu_list_state.previous();
+            self.cpu_table.previous();
         }
     }
 
@@ -62,7 +62,7 @@ impl App {
             self.scroll.down()
         }
         else {
-            self.cpu_list_state.next();
+            self.cpu_table.next();
         }
     }
 
@@ -168,23 +168,26 @@ impl TabsState {
     }
 }
 
-pub struct StatefulList {
-    pub state: ListState,
-    pub items: Vec<String>,
+
+pub struct CpuTable {
+    pub state: TableState,
+    pub size: usize,
 }
 
-impl StatefulList{
-    pub fn new() -> StatefulList {
-        StatefulList {
-            state: ListState::default(),
-            items: vec![],
+impl CpuTable {
+    pub fn new() -> CpuTable {
+        CpuTable {
+            state: TableState::default(),
+            size: 0,
         }
     }
 
     pub fn next(&mut self) {
+        if self.size == 0 { return;}
+
         let i = match self.state.selected() {
             Some(i) => {
-                if i >= self.items.len() - 1 {
+                if i >= self.size - 1 {
                     0
                 } else {
                     i + 1
@@ -196,10 +199,11 @@ impl StatefulList{
     }
 
     pub fn previous(&mut self) {
+        if self.size == 0 { return;}
         let i = match self.state.selected() {
             Some(i) => {
                 if i == 0 {
-                    self.items.len() - 1
+                    self.size - 1
                 } else {
                     i - 1
                 }
@@ -209,8 +213,5 @@ impl StatefulList{
         self.state.select(Some(i));
     }
 }
-
-
-
 
 
