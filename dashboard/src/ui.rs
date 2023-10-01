@@ -8,7 +8,7 @@ use ratatui::widgets::*;
 use ratatui::widgets::block::{Position, Title};
 use crate::app::App;
 use crate::server::Server;
-use crate::util::{bytes_to_gib, used_as_percentage, used_percentage};
+use crate::util::{bytes_to_gb, bytes_to_gib, used_as_percentage, used_percentage};
 
 pub fn draw(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App){
     let chunks = Layout::default()
@@ -136,7 +136,7 @@ pub fn draw_detailed_view(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App
 pub fn draw_cpu_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
     let chunks = Layout::default()
         .direction(Horizontal)
-        .constraints([Constraint::Percentage(80), Constraint::Percentage(20)].as_ref())
+        .constraints([Constraint::Percentage(85), Constraint::Percentage(15)].as_ref())
         .margin(0)
         .split(area);
 
@@ -152,6 +152,7 @@ pub fn draw_memory_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, a
         .split(area);
 
     draw_ram_chart(f, app, chunks[0]);
+    draw_disk_table(f, app, chunks[1]);
 }
 
 pub fn draw_ram_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
@@ -254,4 +255,40 @@ pub fn draw_cpu_table(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, ar
             Constraint::Percentage(50)
         ]);
     f.render_stateful_widget(table, area, &mut app.cpu_table.state);
+}
+
+pub fn draw_disk_table(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
+    let server_index = app.tabs.index - 1;
+    let header_row = Row::new(vec!["Disk", "Used", "Free", "Total"])
+        .style(Style::default())
+        .bottom_margin(1)
+        .height(1);
+    let mut rows: Vec<Row> = vec![];
+
+    let disk_names = app.servers.get(server_index).unwrap().disk_names.clone();
+    let disk_available = &app.servers.get(server_index).unwrap().disk_available;
+    let disk_total = &app.servers.get(server_index).unwrap().disk_total;
+
+    for (i, disk) in disk_names.iter().enumerate() {
+        let disk_used = disk_total[i] - disk_available[i];
+        let mut disk_row = vec![];
+        disk_row.push(disk.to_string());
+        disk_row.push(format!("{:.1}GB", bytes_to_gb(disk_used)));
+        disk_row.push(format!("{:.1}GB", bytes_to_gb(disk_available[i])));
+        disk_row.push(format!("{:.1}GB", bytes_to_gb(disk_total[i])));
+        rows.push(Row::new(disk_row));
+    }
+
+    let table = Table::new(rows)
+        .header(header_row)
+        .block(Block::default()
+            .borders(Borders::ALL))
+        .widths(&[
+            Constraint::Percentage(40),
+            Constraint::Percentage(20),
+            Constraint::Percentage(20),
+            Constraint::Percentage(20)
+        ]);
+
+    f.render_widget(table, area);
 }
