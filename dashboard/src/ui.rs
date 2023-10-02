@@ -117,7 +117,7 @@ fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, 
     }
 }
 
-pub fn draw_detailed_view(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
+fn draw_detailed_view(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
     let current_index = app.tabs.index - 1; // The overview is always first index
     let block = Block::default().borders(Borders::ALL).title(app.servers.index(current_index).hostname.clone());
     f.render_widget(block, area);
@@ -133,7 +133,7 @@ pub fn draw_detailed_view(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App
     draw_memory_row(f, app, chunks[1]);
 }
 
-pub fn draw_cpu_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
+fn draw_cpu_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
     let chunks = Layout::default()
         .direction(Horizontal)
         .constraints([Constraint::Percentage(85), Constraint::Percentage(15)].as_ref())
@@ -144,7 +144,7 @@ pub fn draw_cpu_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area
     draw_cpu_table(f, app, chunks[1]);
 }
 
-pub fn draw_memory_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
+fn draw_memory_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
     let chunks = Layout::default()
         .direction(Horizontal)
         .constraints([Constraint::Percentage(60), Constraint::Percentage(40)].as_ref())
@@ -155,7 +155,7 @@ pub fn draw_memory_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, a
     draw_disk_table(f, app, chunks[1]);
 }
 
-pub fn draw_ram_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
+fn draw_ram_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
     let current_tab_index = app.tabs.index;
     if let Some(ram_data) = app.ram_chart_data.get(&(current_tab_index - 1)) {
         let used = bytes_to_gib(app.servers.get(current_tab_index - 1).unwrap().used_memory);
@@ -199,7 +199,7 @@ pub fn draw_ram_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, ar
     }
 }
 
-pub fn draw_cpu_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
+fn draw_cpu_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
     let current_server_index = app.tabs.index - 1;
     if let Some(cpu_data) = app.cpu_chart_data.get(&(current_server_index)) {
         let one = app.servers.get(current_server_index).unwrap().load_avg_one;
@@ -244,7 +244,7 @@ pub fn draw_cpu_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, ar
 }
 
 
-pub fn draw_cpu_table(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
+fn draw_cpu_table(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
     let server_index = app.tabs.index - 1;
     let load_per_cores = &app.servers.get(server_index).unwrap().cpu_load_per_core;
 
@@ -273,7 +273,7 @@ pub fn draw_cpu_table(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, ar
     f.render_stateful_widget(table, area, &mut app.cpu_table.state);
 }
 
-pub fn draw_disk_table(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
+fn draw_disk_table(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
     let server_index = app.tabs.index - 1;
     let header_row = Row::new(vec!["Disk", "Used", "Free", "Total"])
         .style(Style::default())
