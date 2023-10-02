@@ -12,14 +12,17 @@ pub struct Resources {
     used_swap: u64,
     total_swap: u64,
     cpu_amount: usize,
-    pub cpu_usage: f32,
-    pub cpu_load_per_core: Vec<f32>,
-    pub disk_names: Vec<String>,
-    pub disk_mount: Vec<String>,
-    pub disk_available: Vec<u64>,
-    pub disk_total: Vec<u64>,
+    cpu_usage: f32,
+    cpu_load_per_core: Vec<f32>,
+    disk_names: Vec<String>,
+    disk_available: Vec<u64>,
+    disk_total: Vec<u64>,
     uptime: u64,
     os_version: String,
+    kernel_version: String,
+    load_avg_one: f64,
+    load_avg_five: f64,
+    load_avg_fifteen: f64,
 
     #[serde(skip_serializing)]
     system_struct: System,
@@ -31,7 +34,8 @@ impl Resources {
         let mut sys = get_system();
         sys.refresh_all();
         let disk_space = disk_total_usage(&mut sys);
-        let os_name = sys.long_os_version().unwrap_or_else(|| String::from("Unknown"));
+        let os_version = sys.long_os_version().unwrap_or_else(|| String::from("Unknown"));
+        let kernel_version = sys.kernel_version().unwrap_or_else(|| String::from("Unknown"));
 
         Resources {
             hostname: sys.host_name().unwrap(),
@@ -45,11 +49,14 @@ impl Resources {
             cpu_usage: sys.global_cpu_info().cpu_usage(),
             cpu_load_per_core: get_cpu_load_per_core(&sys),
             disk_names: get_disks_names(&mut sys),
-            disk_mount: get_disks_mount(&mut sys),
             disk_available: get_disks_available(&mut sys),
             disk_total: get_disks_total(&mut sys),
             uptime: sys.uptime(),
-            os_version: os_name,
+            os_version,
+            kernel_version,
+            load_avg_one: sys.load_average().one,
+            load_avg_five: sys.load_average().five,
+            load_avg_fifteen: sys.load_average().fifteen,
             system_struct: sys,
 
         }
@@ -57,10 +64,7 @@ impl Resources {
 
     /// Refreshes the CPU, memory and disk usage
     pub(crate) fn refresh(&mut self) {
-        self.system_struct.refresh_cpu();
-        self.system_struct.refresh_memory();
-        self.system_struct.refresh_disks();
-        self.system_struct.refresh_disks_list();
+        self.system_struct.refresh_all();
 
         self.cpu_usage = self.system_struct.global_cpu_info().cpu_usage();
 
@@ -69,7 +73,12 @@ impl Resources {
         self.available_space = disk_total_usage(&mut self.system_struct).1;
         self.used_swap = self.system_struct.used_swap();
         self.cpu_load_per_core = get_cpu_load_per_core(&self.system_struct);
-        self.disk_available = get_disks_available(&mut self.system_struct)
+        self.disk_available = get_disks_available(&mut self.system_struct);
+        self.uptime = self.system_struct.uptime();
+
+        self.load_avg_one = self.system_struct.load_average().one;
+        self.load_avg_five = self.system_struct.load_average().five;
+        self.load_avg_fifteen = self.system_struct.load_average().fifteen;
     }
 
     pub fn serialize(&self) -> String {
@@ -93,15 +102,6 @@ fn get_disks_names(sys: &mut System) -> Vec<String> {
     let mut names = vec![];
     for disk in sys.disks() {
         names.push(disk.name().to_string_lossy().to_string()) //This needs to be done cleaner
-    }
-    names
-}
-
-fn get_disks_mount(sys: &mut System) -> Vec<String> {
-    sys.refresh_disks_list();
-    let mut names = vec![];
-    for disk in sys.disks() {
-        names.push(disk.mount_point().to_string_lossy().to_string()) //This needs to be done cleaner
     }
     names
 }
