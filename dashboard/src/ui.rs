@@ -147,7 +147,7 @@ pub fn draw_cpu_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area
 pub fn draw_memory_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
     let chunks = Layout::default()
         .direction(Horizontal)
-        .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
+        .constraints([Constraint::Percentage(60), Constraint::Percentage(40)].as_ref())
         .margin(0)
         .split(area);
 
@@ -200,9 +200,14 @@ pub fn draw_ram_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, ar
 }
 
 pub fn draw_cpu_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
-    let current_tab_index = app.tabs.index;
-    if let Some(cpu_sparkline_data) = app.cpu_chart_data.get(&(current_tab_index - 1)) {
-        let data: Vec<(f64, f64)> = cpu_sparkline_data
+    let current_server_index = app.tabs.index - 1;
+    if let Some(cpu_data) = app.cpu_chart_data.get(&(current_server_index)) {
+        let one = app.servers.get(current_server_index).unwrap().load_avg_one;
+        let five = app.servers.get(current_server_index).unwrap().load_avg_five;
+        let fifteen = app.servers.get(current_server_index).unwrap().load_avg_fifteen;
+        let usage = app.servers.get(current_server_index).unwrap().cpu_usage;
+
+        let data: Vec<(f64, f64)> = cpu_data
             .iter()
             .enumerate()
             .map(|(i, &val)| (i as f64, val as f64))
@@ -215,7 +220,18 @@ pub fn draw_cpu_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, ar
             .data(&data)];
 
         let chart = Chart::new(dataset)
-            .block(Block::default().title("CPU Usage").borders(Borders::ALL))
+            .block(Block::default()
+                .title(Title::from("CPU")
+                            .position(Position::Top)
+                            .alignment(Alignment::Left))
+                .title(Title::from(format!("{:.2} {:.2} {:.2}", one, five, fifteen))
+                            .position(Position::Top)
+                            .alignment(Alignment::Right))
+                .title(Title::from(format!("{:.1}%", usage))
+                            .position(Position::Top)
+                            .alignment(Alignment::Right)
+                )
+                .borders(Borders::ALL))
             .x_axis(Axis::default()
                 .bounds([0.0, (data.len() - 1) as f64])
                 .labels(["60s", "0s"].iter().cloned().map(Span::from).collect()))
