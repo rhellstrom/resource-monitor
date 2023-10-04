@@ -8,7 +8,7 @@ use ratatui::widgets::*;
 use ratatui::widgets::block::{Position, Title};
 use crate::app::App;
 use crate::server::Server;
-use crate::util::{bytes_to_gb, bytes_to_gib, used_as_percentage, used_percentage};
+use crate::util::{bytes_to_gb, bytes_to_gib, format_seconds, used_as_percentage, used_percentage};
 
 pub fn draw(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App){
     let chunks = Layout::default()
@@ -131,6 +131,7 @@ fn draw_detailed_view(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, ar
 
     draw_cpu_row(f, app, chunks[0]);
     draw_memory_row(f, app, chunks[1]);
+    draw_info_network_row(f, app, chunks[2]);
 }
 
 fn draw_cpu_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
@@ -153,6 +154,16 @@ fn draw_memory_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area:
 
     draw_ram_chart(f, app, chunks[0]);
     draw_disk_table(f, app, chunks[1]);
+}
+
+fn draw_info_network_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
+    let chunks = Layout::default()
+        .direction(Horizontal)
+        .constraints([Constraint::Percentage(60), Constraint::Percentage(40)].as_ref())
+        .margin(0)
+        .split(area);
+
+    draw_info_list(f, app, chunks[1]);
 }
 
 fn draw_ram_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
@@ -307,4 +318,18 @@ fn draw_disk_table(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area:
         ]);
 
     f.render_widget(table, area);
+}
+
+fn draw_info_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
+    let server_index = app.tabs.index - 1;
+    let mut items: Vec<ListItem> = vec![];
+    items.push(ListItem::new(format!("OS: {}", app.servers.get(server_index).unwrap().os_version)));
+    items.push(ListItem::new(format!("Kernel: {}", app.servers.get(server_index).unwrap().kernel_version)));
+    items.push(ListItem::new(format!("Hostname: {}", app.servers.get(server_index).unwrap().hostname)));
+    items.push(ListItem::new(format!("Uptime: {}", format_seconds(app.servers.get(server_index).unwrap().uptime))));
+
+    let list = List::new(items)
+        .block(Block::default()
+            .borders(Borders::ALL));
+    f.render_widget(list, area);
 }
