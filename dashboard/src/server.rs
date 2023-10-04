@@ -27,6 +27,8 @@ pub struct Server {
     pub load_avg_one: f64,
     pub load_avg_five: f64,
     pub load_avg_fifteen: f64,
+    pub bytes_received: u64,
+    pub bytes_transmitted: u64,
 }
 
 /// Initialises a Vec<Server> with default values and an endpoint for each instance of Server
