@@ -14,6 +14,10 @@ pub struct App {
     pub ram_chart_data: HashMap<usize, Vec<u64>>,
     pub max_chart_data_points: usize,
     pub cpu_table: CpuTable,
+    pub previous_transmitted_total: HashMap<usize, u64>,
+    pub previous_received_total: HashMap<usize, u64>,
+    pub received_chart_data: HashMap<usize, Vec<u64>>,
+    pub transmitted_chart_data: HashMap<usize, Vec<u64>>,
 }
 
 impl App {
@@ -29,6 +33,10 @@ impl App {
             ram_chart_data: HashMap::new(),
             max_chart_data_points: (60 * 1000 / tick_rate) as usize,
             cpu_table: CpuTable::new(),
+            previous_transmitted_total: HashMap::new(),
+            previous_received_total: HashMap::new(),
+            received_chart_data: HashMap::new(),
+            transmitted_chart_data:HashMap::new(),
         }
     }
 
@@ -67,10 +75,12 @@ impl App {
     }
 
     pub fn on_tick(&mut self, servers: Vec<Server>) {
-        self.tabs.update_tabs(&servers);    //Would prefer static tab names
+        self.update_previous_network_data();
+        self.tabs.update_tabs(&servers);
         self.servers = servers;
         self.update_cpu_chart_data();
         self.update_ram_chart_data();
+        self.update_network_chart_data();
     }
 
     //TODO: Make the following functions into something more generic to avoid repetition
@@ -102,6 +112,59 @@ impl App {
                 if chart_data.len() > self.max_chart_data_points {
                     let index = chart_data.len() - self.max_chart_data_points;
                     chart_data.drain(..index);
+                }
+            }
+        }
+    }
+
+    //Saves the previous value for chart comparison
+    pub fn update_previous_network_data(&mut self){
+        for (i, server) in self.servers.iter().enumerate() {
+            if i < self.servers.len() {
+                let old_transmitted = server.bytes_transmitted;
+                let old_received = server.bytes_received;
+                self.previous_transmitted_total
+                    .entry(i)
+                    .or_insert(old_transmitted);
+                self.previous_received_total
+                    .entry(i)
+                    .or_insert(old_received);
+            }
+        }
+    }
+
+    pub fn update_network_chart_data(&mut self){
+        for (i, server) in self.servers.iter().enumerate() {
+            if i < self.servers.len() {
+                let transmitted_data = self.transmitted_chart_data
+                    .entry(i)
+                    .or_insert_with(|| vec![0; self.max_chart_data_points]);
+
+                let received_data = self.received_chart_data
+                    .entry(i)
+                    .or_insert_with(|| vec![0; self.max_chart_data_points]);
+
+                let transmitted_since_last_refresh = match self.previous_transmitted_total.get(&i) {
+                    Some(&old_transmitted) => server.bytes_transmitted - old_transmitted,
+                    None => server.bytes_transmitted,
+                };
+
+                let received_since_last_refresh = match self.previous_received_total.get(&i) {
+                    Some(&old_received) => server.bytes_received - old_received,
+                    None => server.bytes_received,
+                };
+
+                transmitted_data.push(transmitted_since_last_refresh);
+                received_data.push(received_since_last_refresh);
+
+                if transmitted_data.len() > self.max_chart_data_points {
+                    let index = transmitted_data.len() - self.max_chart_data_points;
+                    transmitted_data.drain(..index);
+                }
+
+                if received_data.len() > self.max_chart_data_points {
+                    let index = received_data.len() - self.max_chart_data_points;
+                    received_data.drain(..index);
                 }
             }
         }

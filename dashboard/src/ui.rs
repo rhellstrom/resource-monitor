@@ -162,7 +162,7 @@ fn draw_info_network_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App,
         .constraints([Constraint::Percentage(60), Constraint::Percentage(40)].as_ref())
         .margin(0)
         .split(area);
-
+    draw_network_chart(f, app, chunks[0]);
     draw_info_list(f, app, chunks[1]);
 }
 
@@ -332,4 +332,25 @@ fn draw_info_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: 
         .block(Block::default()
             .borders(Borders::ALL));
     f.render_widget(list, area);
+}
+
+
+/*
+let datasets = vec![
+        Dataset::default()
+            .name("data2")
+            .marker(symbols::Marker::Dot)
+            .style(Style::default().fg(Color::Cyan))
+            .data(&app.data1),
+        Dataset::default()
+            .name("data3")
+            .marker(symbols::Marker::Braille)
+            .style(Style::default().fg(Color::Yellow))
+            .data(&app.data2),
+    ];
+ */
+
+fn draw_network_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &App, area: Rect) {
+    let current_server_index = app.tabs.index - 1;
+
 }
