@@ -335,22 +335,58 @@ fn draw_info_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: 
 }
 
 
-/*
-let datasets = vec![
-        Dataset::default()
-            .name("data2")
-            .marker(symbols::Marker::Dot)
-            .style(Style::default().fg(Color::Cyan))
-            .data(&app.data1),
-        Dataset::default()
-            .name("data3")
-            .marker(symbols::Marker::Braille)
-            .style(Style::default().fg(Color::Yellow))
-            .data(&app.data2),
-    ];
- */
 
 fn draw_network_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &App, area: Rect) {
     let current_server_index = app.tabs.index - 1;
+    if let Some(received_data) = app.received_chart_data.get(&(current_server_index)) {
+        if let Some(transmitted_data) = app.transmitted_chart_data.get(&(current_server_index)){
+            let greeting = Paragraph::new(format!("RX: {} KB/S   TX: {} KB/S RX TOTAL: {} TX TOTAL: {}",
+                                                  received_data.last().unwrap(),
+                                                  transmitted_data.last().unwrap(),
+                                                  app.servers.get(current_server_index).unwrap().bytes_received,
+                                                  app.servers.get(current_server_index).unwrap().bytes_transmitted));
+            f.render_widget(greeting, area);
 
+            let rx : Vec<(f64, f64)> = received_data
+                .iter()
+                .enumerate()
+                .map(|(i, &val)| (i as f64, val))
+                .collect();
+            let tx : Vec<(f64, f64)> = transmitted_data
+                .iter()
+                .enumerate()
+                .map(|(i, &val)| (i as f64, val))
+                .collect();
+
+            let datasets = vec![
+                Dataset::default()
+                    .name("rx")
+                    .marker(Marker::Braille)
+                    .style(Style::default().fg(Color::Yellow))
+                    .data(&rx),
+                Dataset::default()
+                    .name("tx")
+                    .marker(Marker::Braille)
+                    .style(Style::default().fg(Color::Red))
+                    .data(&tx),
+            ];
+
+            let chart = Chart::new(datasets)
+                .block(Block::default()
+                    .title(Title::from("Network KB/s for the Last 60s")
+                        .position(Position::Top)
+                        .alignment(Alignment::Left))
+                    .borders(Borders::ALL))
+                .x_axis(Axis::default()
+                    .bounds([0.0, (received_data.len() - 1) as f64])
+                    .labels(["60s", "0s"].iter().cloned().map(Span::from).collect()))
+                .y_axis(Axis::default()
+                    .bounds([0.0, 2000.0])
+                    .labels(["0 KB/s", "200 KB/s"].iter().cloned().map(Span::from).collect()));
+
+            f.render_widget(chart, area);
+
+
+        }
+    }
 }

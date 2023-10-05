@@ -16,8 +16,8 @@ pub struct App {
     pub cpu_table: CpuTable,
     pub previous_transmitted_total: HashMap<usize, u64>,
     pub previous_received_total: HashMap<usize, u64>,
-    pub received_chart_data: HashMap<usize, Vec<u64>>,
-    pub transmitted_chart_data: HashMap<usize, Vec<u64>>,
+    pub received_chart_data: HashMap<usize, Vec<f64>>,
+    pub transmitted_chart_data: HashMap<usize, Vec<f64>>,
 }
 
 impl App {
@@ -118,57 +118,55 @@ impl App {
     }
 
     //Saves the previous value for chart comparison
-    pub fn update_previous_network_data(&mut self){
+    pub fn update_previous_network_data(&mut self) {
         for (i, server) in self.servers.iter().enumerate() {
-            if i < self.servers.len() {
-                let old_transmitted = server.bytes_transmitted;
-                let old_received = server.bytes_received;
-                self.previous_transmitted_total
-                    .entry(i)
-                    .or_insert(old_transmitted);
-                self.previous_received_total
-                    .entry(i)
-                    .or_insert(old_received);
-            }
+            let old_transmitted = server.bytes_transmitted;
+            let old_received = server.bytes_received;
+
+            self.previous_transmitted_total.insert(i, old_transmitted);
+            self.previous_received_total.insert(i, old_received);
         }
     }
 
-    pub fn update_network_chart_data(&mut self){
+    pub fn update_network_chart_data(&mut self) {
         for (i, server) in self.servers.iter().enumerate() {
             if i < self.servers.len() {
                 let transmitted_data = self.transmitted_chart_data
                     .entry(i)
-                    .or_insert_with(|| vec![0; self.max_chart_data_points]);
+                    .or_insert_with(|| vec![0.0; self.max_chart_data_points]);  // Initialize with an empty vector
 
                 let received_data = self.received_chart_data
                     .entry(i)
-                    .or_insert_with(|| vec![0; self.max_chart_data_points]);
+                    .or_insert_with(|| vec![0.0; self.max_chart_data_points]);  // Initialize with an empty vector
 
-                let transmitted_since_last_refresh = match self.previous_transmitted_total.get(&i) {
-                    Some(&old_transmitted) => server.bytes_transmitted - old_transmitted,
-                    None => server.bytes_transmitted,
-                };
 
-                let received_since_last_refresh = match self.previous_received_total.get(&i) {
-                    Some(&old_received) => server.bytes_received - old_received,
-                    None => server.bytes_received,
-                };
+                let previous_received = self.previous_received_total.get(&i);
+                let previous_transmitted = self.previous_transmitted_total.get(&i);
 
-                transmitted_data.push(transmitted_since_last_refresh);
-                received_data.push(received_since_last_refresh);
+                if let (Some(previous_received_total), Some(previous_transmitted_total)) = (previous_received, previous_transmitted) {
+                    // Calculate kb/s to populate chart data
+                    let tick_rate_sec = self.tick_rate as f64 / 1000.0;
 
+                    let rx_kb_per_sec = ((server.bytes_received - previous_received_total) as f64) / tick_rate_sec / 1024.0;
+                    let tx_kb_per_sec = ((server.bytes_transmitted - previous_transmitted_total) as f64) / tick_rate_sec / 1024.0;
+
+                    // Use rx_kb_per_sec and tx_kb_per_sec
+                    transmitted_data.push(tx_kb_per_sec);
+                    received_data.push(rx_kb_per_sec);
+                }
+
+                // Truncate the vectors to max_chart_data_points
                 if transmitted_data.len() > self.max_chart_data_points {
-                    let index = transmitted_data.len() - self.max_chart_data_points;
-                    transmitted_data.drain(..index);
+                    transmitted_data.drain(..transmitted_data.len() - self.max_chart_data_points);
                 }
 
                 if received_data.len() > self.max_chart_data_points {
-                    let index = received_data.len() - self.max_chart_data_points;
-                    received_data.drain(..index);
+                    received_data.drain(..received_data.len() - self.max_chart_data_points);
                 }
             }
         }
     }
+
 }
 
 pub struct ScrollState {
