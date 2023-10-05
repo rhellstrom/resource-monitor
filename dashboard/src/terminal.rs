@@ -42,11 +42,11 @@ pub fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Re
 /// and updates the data to be drawn on each tick. Once loop is exited we restore the terminal
 // TODO: Ensure we restore the terminal if we panic
 // TODO: Only ever update app.servers when we've actually fetched information instead of on each tick
-pub async fn run(servers: Arc<Mutex<Vec<Server>>>, tick_rate: u64) -> Result<()> {
+pub async fn run(servers: Arc<Mutex<Vec<Server>>>, tick_rate: u64, update_interval: u64) -> Result<()> {
     let mut terminal = setup_terminal()?;
     let tick = Duration::from_millis(tick_rate);
     
-    let mut app = App::new(String::from("Dashboard"), tick_rate);
+    let mut app = App::new(String::from("Dashboard"), tick_rate, update_interval);
     let mut last_tick = Instant::now();
 
     loop {

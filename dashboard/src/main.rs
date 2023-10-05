@@ -29,7 +29,7 @@ async fn main() -> Result<()> {
     tokio::spawn(async move {
         refresh_servers(servers_clone, args.update_frequency, exit_loop_clone, server_endpoints).await;
     });
-    run(Arc::clone(&servers), args.tick_rate).await.expect("Application loop failure");
+    run(Arc::clone(&servers), args.tick_rate, args.update_frequency).await.expect("Application loop failure");
     //Shut down the refresh thread by altering the AtomicBool value
     exit_loop.store(true, Ordering::Relaxed);
     Ok(())

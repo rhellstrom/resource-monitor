@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::time::{Duration, Instant};
 use ratatui::widgets::{ScrollbarState, TableState};
 use crate::server::Server;
 use crate::util::{used_as_percentage};
@@ -18,10 +19,12 @@ pub struct App {
     pub previous_received_total: HashMap<usize, u64>,
     pub received_chart_data: HashMap<usize, Vec<f64>>,
     pub transmitted_chart_data: HashMap<usize, Vec<f64>>,
+    pub last_update_time: Instant,
+    pub update_interval: u64,
 }
 
 impl App {
-    pub fn new(title: String, tick_rate: u64) -> App {
+    pub fn new(title: String, tick_rate: u64, update_interval: u64) -> App {
         App {
             title,
             tick_rate,
@@ -37,6 +40,8 @@ impl App {
             previous_received_total: HashMap::new(),
             received_chart_data: HashMap::new(),
             transmitted_chart_data:HashMap::new(),
+            last_update_time: Instant::now(),
+            update_interval,
         }
     }
 
@@ -75,12 +80,18 @@ impl App {
     }
 
     pub fn on_tick(&mut self, servers: Vec<Server>) {
-        self.update_previous_network_data();
+
         self.tabs.update_tabs(&servers);
-        self.servers = servers;
+
         self.update_cpu_chart_data();
         self.update_ram_chart_data();
         self.update_network_chart_data();
+        if self.last_update_time.elapsed() >= Duration::from_millis(self.update_interval){
+            self.update_previous_network_data();
+            self.servers = servers;
+
+            self.last_update_time = Instant::now();
+        }
     }
 
     //TODO: Make the following functions into something more generic to avoid repetition

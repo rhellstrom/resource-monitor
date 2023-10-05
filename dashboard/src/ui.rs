@@ -334,18 +334,27 @@ fn draw_info_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: 
     f.render_widget(list, area);
 }
 
-
-
 fn draw_network_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &App, area: Rect) {
     let current_server_index = app.tabs.index - 1;
     if let Some(received_data) = app.received_chart_data.get(&(current_server_index)) {
         if let Some(transmitted_data) = app.transmitted_chart_data.get(&(current_server_index)){
+
             let greeting = Paragraph::new(format!("RX: {} KB/S   TX: {} KB/S RX TOTAL: {} TX TOTAL: {}",
                                                   received_data.last().unwrap(),
                                                   transmitted_data.last().unwrap(),
                                                   app.servers.get(current_server_index).unwrap().bytes_received,
                                                   app.servers.get(current_server_index).unwrap().bytes_transmitted));
             f.render_widget(greeting, area);
+
+            // Calculate max values for received and transmitted data
+            let max_rx = received_data.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+            let max_tx = transmitted_data.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+            let max_y = f64::max(max_rx, max_tx) + 100.0;  // Add some margin for better visualization
+
+
+
+
+            /*
 
             let rx : Vec<(f64, f64)> = received_data
                 .iter()
@@ -381,11 +390,12 @@ fn draw_network_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &App, area: 
                     .bounds([0.0, (received_data.len() - 1) as f64])
                     .labels(["60s", "0s"].iter().cloned().map(Span::from).collect()))
                 .y_axis(Axis::default()
-                    .bounds([0.0, 2000.0])
+                    .bounds([0.0, max_y])
                     .labels(["0 KB/s", "200 KB/s"].iter().cloned().map(Span::from).collect()));
 
             f.render_widget(chart, area);
 
+             */
 
         }
     }
