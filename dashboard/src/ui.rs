@@ -8,7 +8,7 @@ use ratatui::widgets::*;
 use ratatui::widgets::block::{Position, Title};
 use crate::app::App;
 use crate::server::Server;
-use crate::util::{bytes_to_gb, bytes_to_gib, format_seconds, used_as_percentage, used_percentage};
+use crate::util::{bytes_to_gb, bytes_to_gib, format_seconds, log_scale, used_as_percentage, used_percentage};
 
 pub fn draw(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App){
     let chunks = Layout::default()
@@ -334,11 +334,11 @@ fn draw_info_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: 
     f.render_widget(list, area);
 }
 
+
 fn draw_network_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &App, area: Rect) {
     let current_server_index = app.tabs.index - 1;
     if let Some(received_data) = app.received_chart_data.get(&(current_server_index)) {
         if let Some(transmitted_data) = app.transmitted_chart_data.get(&(current_server_index)){
-
             let greeting = Paragraph::new(format!("RX: {} KB/S   TX: {} KB/S RX TOTAL: {} TX TOTAL: {}",
                                                   received_data.last().unwrap(),
                                                   transmitted_data.last().unwrap(),
@@ -346,37 +346,39 @@ fn draw_network_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &App, area: 
                                                   app.servers.get(current_server_index).unwrap().bytes_transmitted));
             f.render_widget(greeting, area);
 
-            // Calculate max values for received and transmitted data
-            let max_rx = received_data.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
-            let max_tx = transmitted_data.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
-            let max_y = f64::max(max_rx, max_tx) + 100.0;  // Add some margin for better visualization
 
+            let mut max_rx = *received_data.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(&0.0);
+            if max_rx < 100.0 { max_rx = 100.0;}
+            let scaled_rx: Vec<f64> = received_data.iter().map(|&val| log_scale(val, max_rx)).collect();
+            let scaled_tx: Vec<f64> = transmitted_data.iter().map(|&val| log_scale(val, max_rx)).collect();
 
+            let max_string= format!("{:.1} MB/s", max_rx / 1000.0);
+            let my_str_ref: &str = max_string.as_str();
 
-
-            /*
-
-            let rx : Vec<(f64, f64)> = received_data
+            let rx : Vec<(f64, f64)> = scaled_rx
                 .iter()
                 .enumerate()
                 .map(|(i, &val)| (i as f64, val))
                 .collect();
-            let tx : Vec<(f64, f64)> = transmitted_data
+            let tx : Vec<(f64, f64)> = scaled_tx
                 .iter()
                 .enumerate()
                 .map(|(i, &val)| (i as f64, val))
                 .collect();
 
+            //TODO Force name plate with data
             let datasets = vec![
                 Dataset::default()
-                    .name("rx")
+                    .name("rxxxxxxxxxxx")
                     .marker(Marker::Braille)
+                    .graph_type(GraphType::Line)
                     .style(Style::default().fg(Color::Yellow))
                     .data(&rx),
                 Dataset::default()
                     .name("tx")
                     .marker(Marker::Braille)
-                    .style(Style::default().fg(Color::Red))
+                    .graph_type(GraphType::Line)
+                    .style(Style::default().fg(Color::Magenta))
                     .data(&tx),
             ];
 
@@ -390,13 +392,10 @@ fn draw_network_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &App, area: 
                     .bounds([0.0, (received_data.len() - 1) as f64])
                     .labels(["60s", "0s"].iter().cloned().map(Span::from).collect()))
                 .y_axis(Axis::default()
-                    .bounds([0.0, max_y])
-                    .labels(["0 KB/s", "200 KB/s"].iter().cloned().map(Span::from).collect()));
+                    .bounds([0.0, 100.0])
+                    .labels(["0 KB/s", my_str_ref].iter().cloned().map(Span::from).collect()));
 
             f.render_widget(chart, area);
-
-             */
-
         }
     }
 }

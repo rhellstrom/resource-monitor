@@ -41,3 +41,11 @@ pub fn format_seconds(seconds: u64) -> String {
     }
     time_units.join(", ")
 }
+
+pub fn log_scale(value: f64, max_value: f64) -> f64 {
+    if value <= 0.0 {
+        0.0
+    } else {
+        ((value + 1.0).log10() / (max_value + 1.0).log10()) * 100.0
+    }
+}

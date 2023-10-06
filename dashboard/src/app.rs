@@ -80,16 +80,14 @@ impl App {
     }
 
     pub fn on_tick(&mut self, servers: Vec<Server>) {
-
         self.tabs.update_tabs(&servers);
-
         self.update_cpu_chart_data();
         self.update_ram_chart_data();
         self.update_network_chart_data();
+
         if self.last_update_time.elapsed() >= Duration::from_millis(self.update_interval){
             self.update_previous_network_data();
             self.servers = servers;
-
             self.last_update_time = Instant::now();
         }
     }
@@ -150,34 +148,27 @@ impl App {
                     .entry(i)
                     .or_insert_with(|| vec![0.0; self.max_chart_data_points]);  // Initialize with an empty vector
 
-
                 let previous_received = self.previous_received_total.get(&i);
                 let previous_transmitted = self.previous_transmitted_total.get(&i);
 
                 if let (Some(previous_received_total), Some(previous_transmitted_total)) = (previous_received, previous_transmitted) {
                     // Calculate kb/s to populate chart data
                     let tick_rate_sec = self.tick_rate as f64 / 1000.0;
-
                     let rx_kb_per_sec = ((server.bytes_received - previous_received_total) as f64) / tick_rate_sec / 1024.0;
                     let tx_kb_per_sec = ((server.bytes_transmitted - previous_transmitted_total) as f64) / tick_rate_sec / 1024.0;
-
-                    // Use rx_kb_per_sec and tx_kb_per_sec
-                    transmitted_data.push(tx_kb_per_sec);
                     received_data.push(rx_kb_per_sec);
+                    transmitted_data.push(tx_kb_per_sec);
                 }
 
-                // Truncate the vectors to max_chart_data_points
                 if transmitted_data.len() > self.max_chart_data_points {
                     transmitted_data.drain(..transmitted_data.len() - self.max_chart_data_points);
                 }
-
                 if received_data.len() > self.max_chart_data_points {
                     received_data.drain(..received_data.len() - self.max_chart_data_points);
                 }
             }
         }
     }
-
 }
 
 pub struct ScrollState {
@@ -285,5 +276,3 @@ impl CpuTable {
         self.state.select(Some(i));
     }
 }
-
-
