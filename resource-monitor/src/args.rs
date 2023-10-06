@@ -4,7 +4,7 @@ use clap:: {Parser};
 #[command(author, version, about, long_about = None)]
 pub struct Args {
     /// The frequency which the system metrics are updated. Given in milliseconds
-    #[arg(short('r'), long("update"), default_value = "2000")]
+    #[arg(short('r'), long("update"), default_value = "1000")]
     pub update_frequency: u64,
 
     /// The port to listen for incoming requests
