@@ -10,7 +10,7 @@ pub fn used_percentage(available: u64, total: u64) -> f64 {
 }
 
 pub fn bytes_to_gib(bytes: u64) -> f64 {
-    const GIB: f64 = 1024.0 * 1024.0 * 1024.0; // 1 GiB
+    const GIB: f64 = 1024.0 * 1024.0 * 1024.0;
     bytes as f64 / GIB
 }
 
@@ -23,8 +23,6 @@ pub fn format_seconds(seconds: u64) -> String {
     let days = seconds / (24 * 3600);
     let hours = (seconds / 3600) % 24;
     let minutes = (seconds / 60) % 60;
-    let seconds = seconds % 60;
-
     let mut time_units = Vec::new();
 
     if days > 0 {
@@ -36,9 +34,6 @@ pub fn format_seconds(seconds: u64) -> String {
     if minutes > 0 {
         time_units.push(format!("{:02} minutes", minutes));
     }
-    if seconds > 0 {
-        time_units.push(format!("{:02} seconds", seconds));
-    }
     time_units.join(", ")
 }
 
@@ -47,5 +42,21 @@ pub fn log_scale(value: f64, max_value: f64) -> f64 {
         0.0
     } else {
         ((value + 1.0).log10() / (max_value + 1.0).log10()) * 100.0
+    }
+}
+
+pub fn format_kilobytes(kilobytes: u64) -> String {
+    const KB: u64 = 1024;
+    const MB: u64 = KB * KB;
+    const GB: u64 = KB * MB;
+
+    if kilobytes < KB {
+        format!("{} KB", kilobytes)
+    } else if kilobytes < MB {
+        format!("{:.2} MB", kilobytes as f64 / KB as f64)
+    } else if kilobytes < GB {
+        format!("{:.2} GB", kilobytes as f64 / MB as f64)
+    } else {
+        format!("{:.2} TB", kilobytes as f64 / GB as f64)
     }
 }

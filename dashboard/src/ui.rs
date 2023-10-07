@@ -8,7 +8,7 @@ use ratatui::widgets::*;
 use ratatui::widgets::block::{Position, Title};
 use crate::app::App;
 use crate::server::Server;
-use crate::util::{bytes_to_gb, bytes_to_gib, format_seconds, log_scale, used_as_percentage, used_percentage};
+use crate::util::{bytes_to_gb, bytes_to_gib, format_kilobytes, format_seconds, log_scale, used_as_percentage, used_percentage};
 
 pub fn draw(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App){
     let chunks = Layout::default()
@@ -159,7 +159,7 @@ fn draw_memory_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area:
 fn draw_info_network_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
     let chunks = Layout::default()
         .direction(Horizontal)
-        .constraints([Constraint::Percentage(60), Constraint::Percentage(40)].as_ref())
+        .constraints([Constraint::Percentage(80), Constraint::Percentage(20)].as_ref())
         .margin(0)
         .split(area);
     draw_network_chart(f, app, chunks[0]);
@@ -190,7 +190,7 @@ fn draw_ram_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: 
             .block(Block::new()
                 .borders(Borders::ALL)
                 .title(
-                    Title::from("RAM Usage")
+                    Title::from("RAM")
                         .position(Position::Top)
                         .alignment(Alignment::Left),
                 )
@@ -345,14 +345,12 @@ fn draw_network_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &App, area: 
                                                   app.servers.get(current_server_index).unwrap().bytes_received,
                                                   app.servers.get(current_server_index).unwrap().bytes_transmitted));
             f.render_widget(greeting, area);
-
-
             let mut max_rx = *received_data.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(&0.0);
             if max_rx < 100.0 { max_rx = 100.0;}
             let scaled_rx: Vec<f64> = received_data.iter().map(|&val| log_scale(val, max_rx)).collect();
             let scaled_tx: Vec<f64> = transmitted_data.iter().map(|&val| log_scale(val, max_rx)).collect();
 
-            let max_string= format!("{:.1} MB/s", max_rx / 1000.0);
+            let max_string= format!("{}/s", format_kilobytes(max_rx as u64));
             let my_str_ref: &str = max_string.as_str();
 
             let rx : Vec<(f64, f64)> = scaled_rx
@@ -384,10 +382,11 @@ fn draw_network_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &App, area: 
 
             let chart = Chart::new(datasets)
                 .block(Block::default()
-                    .title(Title::from("Network KB/s for the Last 60s")
+                    .title(Title::from("Network")
                         .position(Position::Top)
                         .alignment(Alignment::Left))
                     .borders(Borders::ALL))
+
                 .x_axis(Axis::default()
                     .bounds([0.0, (received_data.len() - 1) as f64])
                     .labels(["60s", "0s"].iter().cloned().map(Span::from).collect()))

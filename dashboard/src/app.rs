@@ -142,24 +142,27 @@ impl App {
             if i < self.servers.len() {
                 let transmitted_data = self.transmitted_chart_data
                     .entry(i)
-                    .or_insert_with(|| vec![0.0; self.max_chart_data_points]);  // Initialize with an empty vector
+                    .or_insert_with(|| vec![0.0; self.max_chart_data_points]);
 
                 let received_data = self.received_chart_data
                     .entry(i)
-                    .or_insert_with(|| vec![0.0; self.max_chart_data_points]);  // Initialize with an empty vector
+                    .or_insert_with(|| vec![0.0; self.max_chart_data_points]);
 
                 let previous_received = self.previous_received_total.get(&i);
                 let previous_transmitted = self.previous_transmitted_total.get(&i);
 
                 if let (Some(previous_received_total), Some(previous_transmitted_total)) = (previous_received, previous_transmitted) {
-                    // Calculate kb/s to populate chart data
                     let tick_rate_sec = self.tick_rate as f64 / 1000.0;
                     let rx_kb_per_sec = ((server.bytes_received - previous_received_total) as f64) / tick_rate_sec / 1024.0;
                     let tx_kb_per_sec = ((server.bytes_transmitted - previous_transmitted_total) as f64) / tick_rate_sec / 1024.0;
-                    received_data.push(rx_kb_per_sec);
-                    transmitted_data.push(tx_kb_per_sec);
-                }
 
+                    //To avoid showing the total rx/tx on our first calculation
+                    if *previous_received_total != 0 && *previous_transmitted_total != 0 {
+                        received_data.push(rx_kb_per_sec);
+                        transmitted_data.push(tx_kb_per_sec);
+                    }
+
+                }
                 if transmitted_data.len() > self.max_chart_data_points {
                     transmitted_data.drain(..transmitted_data.len() - self.max_chart_data_points);
                 }
