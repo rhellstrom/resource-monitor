@@ -4,6 +4,7 @@ use ratatui::backend::CrosstermBackend;
 use ratatui::Frame;
 use ratatui::layout::Direction::{Horizontal};
 use ratatui::prelude::*;
+use ratatui::style::Color::{Magenta, Yellow};
 use ratatui::widgets::*;
 use ratatui::widgets::block::{Position, Title};
 use crate::app::App;
@@ -40,7 +41,7 @@ fn draw_tabs(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect)
     let tabs = Tabs::new(titles)
         .block(Block::default().borders(Borders::ALL)
             .title(app.title.clone()))
-        .highlight_style(Style::default().fg(Color::Yellow))
+        .highlight_style(Style::default().fg(Yellow))
         .select(app.tabs.index);
     f.render_widget(tabs, area);
 }
@@ -162,8 +163,15 @@ fn draw_info_network_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App,
         .constraints([Constraint::Percentage(80), Constraint::Percentage(20)].as_ref())
         .margin(0)
         .split(area);
+
+    let sub_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+        .split(chunks[1]);
+
     draw_network_chart(f, app, chunks[0]);
-    draw_info_list(f, app, chunks[1]);
+    draw_network_info_list(f, app, sub_chunks[0]);
+    draw_info_list(f, app, sub_chunks[1]);
 }
 
 fn draw_ram_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
@@ -364,19 +372,16 @@ fn draw_network_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &App, area: 
                 .map(|(i, &val)| (i as f64, val))
                 .collect();
 
-            //TODO Force name plate with data
             let datasets = vec![
                 Dataset::default()
-                    .name("rxxxxxxxxxxx")
                     .marker(Marker::Braille)
                     .graph_type(GraphType::Line)
-                    .style(Style::default().fg(Color::Yellow))
+                    .style(Style::default().fg(Magenta))
                     .data(&rx),
                 Dataset::default()
-                    .name("tx")
                     .marker(Marker::Braille)
                     .graph_type(GraphType::Line)
-                    .style(Style::default().fg(Color::Magenta))
+                    .style(Style::default().fg(Yellow))
                     .data(&tx),
             ];
 
@@ -395,6 +400,27 @@ fn draw_network_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &App, area: 
                     .labels(["0 KB/s", my_str_ref].iter().cloned().map(Span::from).collect()));
 
             f.render_widget(chart, area);
+        }
+    }
+}
+
+fn draw_network_info_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
+    let current_server_index = app.tabs.index - 1;
+    if let Some(received_data) = app.received_chart_data.get(&(current_server_index)) {
+        if let Some(transmitted_data) = app.transmitted_chart_data.get(&(current_server_index)) {
+            let mut items: Vec<ListItem> = vec![];
+            items.push(ListItem::new(format!("RX: {}/s", format_kilobytes(*received_data.last().unwrap() as u64)))
+                .style(Style::default().fg(Magenta)));
+            items.push(ListItem::new(format!("TX: {}/s", format_kilobytes(*transmitted_data.last().unwrap() as u64)))
+                .style(Style::default().fg(Yellow)));
+            items.push(ListItem::new(format!("Total: {}", format_kilobytes(app.servers.get(current_server_index).unwrap().bytes_received / 1024))));
+            items.push(ListItem::new(format!("Total: {}", format_kilobytes(app.servers.get(current_server_index).unwrap().bytes_transmitted / 1024))));
+
+            let list = List::new(items)
+                .block(Block::default()
+                    .title("Network I/O")
+                    .borders(Borders::ALL));
+            f.render_widget(list, area);
         }
     }
 }
