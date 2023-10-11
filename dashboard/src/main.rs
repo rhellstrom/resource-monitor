@@ -14,11 +14,12 @@ use crate::args::Args;
 use crate::server::{refresh_servers};
 use crate::server::init_with_endpoint;
 use crate::terminal::{run};
+use crate::util::extract_endpoints_from_files;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
-    let server_endpoints = create_endpoints();
+    let server_endpoints = extract_endpoints_from_files(args.files);
 
     let servers = Arc::new(Mutex::new(init_with_endpoint(server_endpoints.clone())));
     // Create an atomic bool wrapped in an Arc to pass to the refresh_thread
@@ -33,33 +34,4 @@ async fn main() -> Result<()> {
     //Shut down the refresh thread by altering the AtomicBool value
     exit_loop.store(true, Ordering::Relaxed);
     Ok(())
-}
-
-pub fn create_endpoints() -> Vec<String> {
-    let mut server_endpoints: Vec<String> = vec![];
-    let url = "http://localhost:3000/resources".to_string();
-    let url2 = "http://localhost:3000/resources".to_string();
-    let url3 = "http://faultyhost:3000/resources".to_string();
-    let url4 = "http://localhost:3000/resources".to_string();
-    let url5 = "http://localhost:3000/resources".to_string();
-    let url6 = "http://localhost:3000/resources".to_string();
-    let url7 = "http://localhost:3000/resources".to_string();
-    let url8 = "http://localhost:3000/resources".to_string();
-    let url9 = "http://localhost:3000/resources".to_string();
-    let url10 = "http://localhost:3000/resources".to_string();
-
-
-    server_endpoints.push(url);
-    server_endpoints.push(url2);
-    server_endpoints.push(url3);
-    server_endpoints.push(url4);
-    server_endpoints.push(url5);
-    server_endpoints.push(url6);
-    server_endpoints.push(url7);
-    server_endpoints.push(url8);
-    server_endpoints.push(url9);
-    server_endpoints.push(url10);
-
-
-    server_endpoints
 }

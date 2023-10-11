@@ -1,3 +1,7 @@
+use std::fs::File;
+use std::io;
+use std::io::BufRead;
+
 /// Shows the total usage as percentage
 pub fn used_as_percentage(used: f64, total: f64) -> f64 {
     (used / total) * 100.0
@@ -59,4 +63,26 @@ pub fn format_kilobytes(kilobytes: u64) -> String {
     } else {
         format!("{:.2} TB", kilobytes as f64 / GB as f64)
     }
+}
+
+/// Takes filepaths as parameter, iterates over each file and return a vector of endpoints.
+/// Each endpoint should be separated by newline
+pub fn extract_endpoints_from_files(file_paths: Vec<String>) -> Vec<String> {
+    let mut endpoints: Vec<String> = Vec::new();
+    for file_path in file_paths {
+        match File::open(&file_path) {
+            Err(_) => {
+                eprintln!("Failed to open file: {}", file_path);
+                continue;
+            }
+            Ok(file) => {
+                let reader = io::BufReader::new(file);
+                for line in reader.lines().flatten() {
+                    endpoints.push(line);
+                }
+            }
+        };
+    }
+
+    endpoints
 }
