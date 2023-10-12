@@ -24,6 +24,10 @@ pub fn draw(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App){
         draw_detailed_view(f, app, chunks[1]);
     }
 
+    if app.show_endpoint_popup {
+        draw_endpoint_popup(f, app, chunks[1]);
+    }
+
 }
 
 fn draw_tabs(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
@@ -423,4 +427,37 @@ fn draw_network_info_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App
             f.render_widget(list, area);
         }
     }
+}
+
+fn draw_endpoint_popup(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
+    let size = f.size();
+
+    let block = Block::default()
+        .title("Add a server endpoint")
+        .title_alignment(Alignment::Center)
+        .borders(Borders::ALL);
+    let area = centered_rect(60, 20, size);
+    f.render_widget(Clear, area); //this clears out the background
+    f.render_widget(block, area);
+}
+
+/// helper function to create a centered rect using up certain percentage of the available rect `r`
+fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+    let popup_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage((100 - percent_y) / 2),
+            Constraint::Percentage(percent_y),
+            Constraint::Percentage((100 - percent_y) / 2),
+        ])
+        .split(r);
+
+    Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage((100 - percent_x) / 2),
+            Constraint::Percentage(percent_x),
+            Constraint::Percentage((100 - percent_x) / 2),
+        ])
+        .split(popup_layout[1])[1]
 }

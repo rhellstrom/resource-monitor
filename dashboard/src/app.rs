@@ -21,6 +21,7 @@ pub struct App {
     pub transmitted_chart_data: HashMap<usize, Vec<f64>>,
     pub last_update_time: Instant,
     pub update_interval: u64,
+    pub show_endpoint_popup: bool,
 }
 
 impl App {
@@ -42,12 +43,16 @@ impl App {
             transmitted_chart_data:HashMap::new(),
             last_update_time: Instant::now(),
             update_interval,
+            show_endpoint_popup: false,
         }
     }
 
     pub fn on_key(&mut self, c: char){
         if c == 'q' {
             self.should_quit = true;
+        }
+        if c == 'p' {
+            self.show_endpoint_popup = !self.show_endpoint_popup;
         }
     }
 
