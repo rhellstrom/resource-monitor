@@ -60,13 +60,36 @@ pub async fn run(servers: Arc<Mutex<Vec<Server>>>, tick_rate: u64, update_interv
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
                     //Read keyboard input from here
-                    match key.code {
-                        KeyCode::Char(c) => app.on_key(c),
-                        KeyCode::Left => app.on_left(),
-                        KeyCode::Right => app.on_right(),
-                        KeyCode::Up => app.on_up(),
-                        KeyCode::Down => app.on_down(),
-                        _ => {}
+                    if app.show_endpoint_popup{
+                        match key.code {
+                            KeyCode::Enter => app.endpoint_input.add_endpoint(),
+                            KeyCode::Char(to_insert) => {
+                                app.endpoint_input.enter_char(to_insert);
+                            }
+                            KeyCode::Backspace => {
+                                app.endpoint_input.delete_char();
+                            }
+                            KeyCode::Left => {
+                                app.endpoint_input.move_cursor_left();
+                            }
+                            KeyCode::Right => {
+                                app.endpoint_input.move_cursor_right();
+                            }
+                            KeyCode::Esc => {
+                                app.show_endpoint_popup = false;
+                            }
+                            _ => {}
+                        }
+                    }
+                    else{
+                        match key.code {
+                            KeyCode::Char(c) => app.on_key(c),
+                            KeyCode::Left => app.on_left(),
+                            KeyCode::Right => app.on_right(),
+                            KeyCode::Up => app.on_up(),
+                            KeyCode::Down => app.on_down(),
+                            _ => {}
+                        }
                     }
                 }
             }

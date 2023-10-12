@@ -9,7 +9,7 @@ use ratatui::widgets::*;
 use ratatui::widgets::block::{Position, Title};
 use crate::app::App;
 use crate::server::Server;
-use crate::util::{bytes_to_gb, bytes_to_gib, format_kilobytes, format_seconds, log_scale, used_as_percentage, used_percentage};
+use crate::util::{bytes_to_gb, bytes_to_gib, centered_rect, format_kilobytes, format_seconds, log_scale, used_as_percentage, used_percentage};
 
 pub fn draw(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App){
     let chunks = Layout::default()
@@ -25,7 +25,7 @@ pub fn draw(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App){
     }
 
     if app.show_endpoint_popup {
-        draw_endpoint_popup(f, app, chunks[1]);
+        draw_endpoint_popup(f, app);
     }
 
 }
@@ -429,35 +429,20 @@ fn draw_network_info_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App
     }
 }
 
-fn draw_endpoint_popup(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
+fn draw_endpoint_popup(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App){
     let size = f.size();
-
-    let block = Block::default()
-        .title("Add a server endpoint")
-        .title_alignment(Alignment::Center)
-        .borders(Borders::ALL);
     let area = centered_rect(60, 20, size);
     f.render_widget(Clear, area); //this clears out the background
-    f.render_widget(block, area);
-}
 
-/// helper function to create a centered rect using up certain percentage of the available rect `r`
-fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
-    let popup_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Percentage((100 - percent_y) / 2),
-            Constraint::Percentage(percent_y),
-            Constraint::Percentage((100 - percent_y) / 2),
-        ])
-        .split(r);
+    let input = Paragraph::new(app.endpoint_input.input.as_str())
+        .block(Block::default()
+            .borders(Borders::ALL)
+            .title_alignment(Alignment::Center)
+            .title("Enter a server endpoint"));
+    f.render_widget(input, area);
 
-    Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage((100 - percent_x) / 2),
-            Constraint::Percentage(percent_x),
-            Constraint::Percentage((100 - percent_x) / 2),
-        ])
-        .split(popup_layout[1])[1]
+    //Set cursor
+    f.set_cursor(area.x + app.endpoint_input.cursor_position as u16 + 1,
+                 // Move one line down, from the border to the input line
+                 area.y + 1,)
 }
