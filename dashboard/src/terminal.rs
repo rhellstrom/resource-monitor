@@ -48,6 +48,7 @@ pub async fn run(servers: Arc<Mutex<Vec<Server>>>, tick_rate: u64, update_interv
     
     let mut app = App::new(String::from("Dashboard"), tick_rate, update_interval);
     let mut last_tick = Instant::now();
+    let mut new_endpoint: Option<Server> = None;
 
     loop {
         terminal.draw(|f| ui::draw(f, &mut app))?;
@@ -62,7 +63,10 @@ pub async fn run(servers: Arc<Mutex<Vec<Server>>>, tick_rate: u64, update_interv
                     //Read keyboard input from here
                     if app.show_endpoint_popup{
                         match key.code {
-                            KeyCode::Enter => app.endpoint_input.add_endpoint(),
+                            KeyCode::Enter => {
+                                new_endpoint = Some(app.endpoint_input.add_endpoint());
+                                app.show_endpoint_popup = false;
+                            },
                             KeyCode::Char(to_insert) => {
                                 app.endpoint_input.enter_char(to_insert);
                             }
@@ -96,6 +100,9 @@ pub async fn run(servers: Arc<Mutex<Vec<Server>>>, tick_rate: u64, update_interv
         }
         // On each tick we update the data to be drawn in the next iteration
         if last_tick.elapsed() >= tick {
+            if let Some(server) = new_endpoint.take() {
+                servers.lock().await.push(server);
+            }
             app.on_tick(servers.lock().await.to_vec());
             last_tick = Instant::now();
         }

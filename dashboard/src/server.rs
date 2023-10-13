@@ -31,6 +31,15 @@ pub struct Server {
     pub bytes_transmitted: u64,
 }
 
+impl Server{
+    pub fn new(endpoint: String) -> Server {
+        Server {
+            endpoint,
+            ..Default::default()
+        }
+    }
+}
+
 /// Initialises a Vec<Server> with default values and an endpoint for each instance of Server
 pub fn init_with_endpoint(endpoints: Vec<String>) -> Vec<Server> {
     let mut servers: Vec<Server> = vec![];
@@ -73,6 +82,11 @@ pub async fn refresh_servers(servers: Arc<Mutex<Vec<Server>>>, update_frequency:
 
         //Only lock and update mutex after we've fetched data
         let mut servers_data = servers.lock().await;
+
+        //If we've added a new endpoint from our UI thread we need to avoid overwriting it
+        if servers_data.len() != servers_container.len(){
+            servers_container.push(servers_data.last().unwrap().clone());
+        }
         *servers_data = servers_container.clone();
     }
 }

@@ -346,9 +346,10 @@ impl InputState {
     }
 
     //TODO: INIT A SERVER FROM ENDPOINT INPUT AND PUSH TO Vec<Server>
-    pub(crate) fn add_endpoint(&mut self) {
-        //self.messages.push(self.input.clone());
+    pub(crate) fn add_endpoint(&mut self) -> Server {
+        let new_server = Server::new(self.input.clone());
         self.input.clear();
         self.reset_cursor();
+        new_server
     }
 }
