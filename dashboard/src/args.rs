@@ -5,7 +5,7 @@ use clap:: {Parser};
 #[command(author, version, about, long_about = None)]
 pub struct Args {
     /// Path(s) for loading endpoints from file
-    #[arg(default_value = "-")]
+    #[arg()]
     pub files: Vec<String>,
 
     /// The UI tick rate
