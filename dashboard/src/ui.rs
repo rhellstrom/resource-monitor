@@ -13,7 +13,7 @@ use crate::util::{bytes_to_gb, bytes_to_gib, centered_rect, format_kilobytes, fo
 
 pub fn draw(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App){
     let chunks = Layout::default()
-        .constraints([Constraint::Length(4), Constraint::Min(0)].as_ref())
+        .constraints([Constraint::Length(4), Constraint::Min(0), Constraint::Length(1)].as_ref())
         .split(f.size());
     draw_tabs(f, app, chunks[0]);
 
@@ -28,6 +28,7 @@ pub fn draw(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App){
         draw_endpoint_popup(f, app);
     }
 
+    draw_key_legend(f, app, chunks[2]);
 }
 
 fn draw_tabs(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
@@ -445,4 +446,16 @@ fn draw_endpoint_popup(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App){
     f.set_cursor(area.x + app.endpoint_input.cursor_position as u16 + 1,
                  // Move one line down, from the border to the input line
                  area.y + 1,)
+}
+
+fn draw_key_legend(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
+    let title = if app.show_endpoint_popup{
+       "Esc: Cancel \t Enter: Add"
+    }else{
+       "Navigate: ◄ ▲ ▼ ► \t 'p': Add a server \t 'q': Exit the application"
+    };
+    let title = Block::default()
+        .title(title)
+        .title_alignment(Alignment::Center);
+    f.render_widget(title, area);
 }
