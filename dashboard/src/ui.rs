@@ -78,13 +78,28 @@ fn draw_server(f: &mut Frame<CrosstermBackend<Stdout>>, server: &Server, area: R
         .margin(2)
         .split(area);
 
-    draw_gauge(f, server.cpu_usage as u16, "CPU Usage", gauge_chunks[0]);
+    let uptime = Paragraph::new(format_seconds(server.uptime))
+        .block(Block::default()
+            .borders(Borders::ALL)
+            .title("Uptime")
+            .padding(Padding::new(0, 0, 1, 0 )))
+        .alignment(Alignment::Center);
+
+    let network = Paragraph::new(format!("{:.1} Mbps | {:.1} Mbps", 0, 0))
+        .block(Block::default()
+            .borders(Borders::ALL)
+            .title("Network I/O")
+            .padding(Padding::new(0, 0, 1, 0 )))
+        .alignment(Alignment::Center);
+
+    f.render_widget(uptime, gauge_chunks[0]);
+
+    draw_gauge(f, server.cpu_usage as u16, "CPU Usage", gauge_chunks[1]);
     draw_gauge(f, used_as_percentage(server.used_memory as f64, server.total_memory as f64) as u16,
-               "Memory Usage", gauge_chunks[1]);
+               "Memory Usage", gauge_chunks[2]);
     draw_gauge(f, used_percentage(server.available_space, server.total_space) as u16,
-               "Disk Usage", gauge_chunks[2]);
-    draw_gauge(f, 85, "w/e Usage", gauge_chunks[3]);
-    draw_gauge(f, 96, "w/e Usage", gauge_chunks[4]);
+               "Disk Usage", gauge_chunks[3]);
+    f.render_widget(network, gauge_chunks[4]);
 }
 
 fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
@@ -109,7 +124,7 @@ fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, 
                 height: subarea_height,
             };
             if i < no_of_servers {
-                draw_server(f, &app.servers[i as usize], subarea);
+                draw_server(f,  &app.servers[i as usize], subarea);
             }
         }
         f.render_stateful_widget(
@@ -418,8 +433,10 @@ fn draw_network_info_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App
                 .style(Style::default().fg(Magenta)));
             items.push(ListItem::new(format!("TX: {}/s", format_kilobytes(*transmitted_data.last().unwrap() as u64)))
                 .style(Style::default().fg(Yellow)));
-            items.push(ListItem::new(format!("Total: {}", format_kilobytes(app.servers.get(current_server_index).unwrap().bytes_received / 1024))));
-            items.push(ListItem::new(format!("Total: {}", format_kilobytes(app.servers.get(current_server_index).unwrap().bytes_transmitted / 1024))));
+            items.push(ListItem::new(format!("Total: {}", format_kilobytes(app.servers.get(current_server_index).unwrap().bytes_received / 1024)))
+                .style(Style::default().fg(Magenta)));
+            items.push(ListItem::new(format!("Total: {}", format_kilobytes(app.servers.get(current_server_index).unwrap().bytes_transmitted / 1024)))
+                .style(Style::default().fg(Yellow)));
 
             let list = List::new(items)
                 .block(Block::default()

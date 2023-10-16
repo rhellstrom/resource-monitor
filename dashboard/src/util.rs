@@ -66,7 +66,7 @@ pub fn format_kilobytes(kilobytes: u64) -> String {
     }
 }
 
-/// Takes filepaths as parameter, iterates over each file and return a vector of endpoints.
+/// Takes file path(s) as parameter, iterates over each file and return a vector of endpoints.
 /// Each endpoint should be separated by newline
 pub fn extract_endpoints_from_files(file_paths: Vec<String>) -> Vec<String> {
     let mut endpoints: Vec<String> = Vec::new();
@@ -107,4 +107,12 @@ pub fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
             Constraint::Percentage((100 - percent_x) / 2),
         ])
         .split(popup_layout[1])[1]
+}
+
+//Converts Kilobytes per second to Megabits per second
+pub fn convert_kb_per_sec_to_mbps(kb_per_sec: u64) -> f64 {
+    // 1 KB = 8 Kb
+    let kb_to_kb = kb_per_sec as f64 * 8.0;
+    // 1 Mb = 1000 Kb
+    kb_to_kb / 1000.0
 }
