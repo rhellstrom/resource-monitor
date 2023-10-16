@@ -110,7 +110,7 @@ pub fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
 }
 
 //Converts Kilobytes per second to Megabits per second
-pub fn convert_kb_per_sec_to_mbps(kb_per_sec: u64) -> f64 {
+pub fn kbs_to_mbps(kb_per_sec: u64) -> f64 {
     // 1 KB = 8 Kb
     let kb_to_kb = kb_per_sec as f64 * 8.0;
     // 1 Mb = 1000 Kb

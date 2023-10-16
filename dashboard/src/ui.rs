@@ -8,8 +8,7 @@ use ratatui::style::Color::{Magenta, Yellow};
 use ratatui::widgets::*;
 use ratatui::widgets::block::{Position, Title};
 use crate::app::App;
-use crate::server::Server;
-use crate::util::{bytes_to_gb, bytes_to_gib, centered_rect, format_kilobytes, format_seconds, log_scale, used_as_percentage, used_percentage};
+use crate::util::{bytes_to_gb, bytes_to_gib, centered_rect, format_kilobytes, format_seconds, kbs_to_mbps, log_scale, used_as_percentage, used_percentage};
 
 pub fn draw(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App){
     let chunks = Layout::default()
@@ -67,7 +66,8 @@ fn draw_gauge(f: &mut Frame<CrosstermBackend<Stdout>>, percentage: u16, title: &
     f.render_widget(gauge, area);
 }
 
-fn draw_server(f: &mut Frame<CrosstermBackend<Stdout>>, server: &Server, area: Rect) {
+fn draw_server(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, index: usize, area: Rect) {
+    let server = app.servers.get(index).unwrap();
     let block = Block::default().borders(Borders::ALL).title(server.hostname.clone());
     f.render_widget(block, area);
 
@@ -85,12 +85,19 @@ fn draw_server(f: &mut Frame<CrosstermBackend<Stdout>>, server: &Server, area: R
             .padding(Padding::new(0, 0, 1, 0 )))
         .alignment(Alignment::Center);
 
-    let network = Paragraph::new(format!("{:.1} Mbps | {:.1} Mbps", 0, 0))
-        .block(Block::default()
-            .borders(Borders::ALL)
-            .title("Network I/O")
-            .padding(Padding::new(0, 0, 1, 0 )))
-        .alignment(Alignment::Center);
+    if let Some(received_data) = app.received_chart_data.get(&(index)) {
+        if let Some(transmitted_data) = app.transmitted_chart_data.get(&(index)) {
+            let rx = received_data.last().unwrap();
+            let tx = transmitted_data.last().unwrap();
+            let network = Paragraph::new(format!("{:.1} Mbps | {:.1} Mbps", kbs_to_mbps(*rx as u64), kbs_to_mbps(*tx as u64)))
+                .block(Block::default()
+                    .borders(Borders::ALL)
+                    .title("Network I/O")
+                    .padding(Padding::new(0, 0, 1, 0 )))
+                .alignment(Alignment::Center);
+            f.render_widget(network, gauge_chunks[4]);
+        }
+    }
 
     f.render_widget(uptime, gauge_chunks[0]);
 
@@ -99,7 +106,7 @@ fn draw_server(f: &mut Frame<CrosstermBackend<Stdout>>, server: &Server, area: R
                "Memory Usage", gauge_chunks[2]);
     draw_gauge(f, used_percentage(server.available_space, server.total_space) as u16,
                "Disk Usage", gauge_chunks[3]);
-    f.render_widget(network, gauge_chunks[4]);
+
 }
 
 fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
@@ -124,7 +131,7 @@ fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, 
                 height: subarea_height,
             };
             if i < no_of_servers {
-                draw_server(f,  &app.servers[i as usize], subarea);
+                draw_server(f,  app, i as usize, subarea);
             }
         }
         f.render_stateful_widget(
