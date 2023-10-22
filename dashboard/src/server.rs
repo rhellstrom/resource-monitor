@@ -58,7 +58,9 @@ pub fn init_with_endpoint(endpoints: Vec<String>) -> Vec<Server> {
 async fn get_servers(servers: &mut [Server], client: &Client){
     for server in servers.iter_mut() {
         let endpoint = server.endpoint.clone();
-        if let Ok(response) = client.get(&endpoint).send().await {
+        if let Ok(response) = client.get(&endpoint)
+            .timeout(Duration::from_secs(2))
+            .send().await {
             if response.status() == StatusCode::OK {
                 let body = response.text().await.unwrap();
                 if let Ok(deserialized_server) = serde_json::from_str(&body) {
