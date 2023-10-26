@@ -44,10 +44,7 @@ impl Server{
 pub fn init_with_endpoint(endpoints: Vec<String>) -> Vec<Server> {
     let mut servers: Vec<Server> = vec![];
     for endpoint in endpoints {
-        servers.push(Server {
-            endpoint,
-            ..Default::default()
-        })
+        servers.push(Server::new(endpoint))
     }
     servers
 }
