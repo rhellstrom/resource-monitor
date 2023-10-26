@@ -38,11 +38,20 @@ pub fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Re
     terminal.show_cursor().context("unable to show cursor")
 }
 
+/// Ensures we gracefully restore the terminal in case of panic
+pub fn initialize_panic_handler() {
+    let original_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |panic_info| {
+        execute!(std::io::stderr(), crossterm::terminal::LeaveAlternateScreen).unwrap();
+        disable_raw_mode().unwrap();
+        original_hook(panic_info);
+    }));
+}
+
 /// Runs the TUI loop. We setup the terminal environment, draw the application and react to user input
 /// and updates the data to be drawn on each tick. Once loop is exited we restore the terminal
-// TODO: Ensure we restore the terminal if we panic
-// TODO: Only ever update app.servers when we've actually fetched information instead of on each tick
 pub async fn run(servers: Arc<Mutex<Vec<Server>>>, tick_rate: u64, update_interval: u64) -> Result<()> {
+    initialize_panic_handler();
     let mut terminal = setup_terminal()?;
     let tick = Duration::from_millis(tick_rate);
     
