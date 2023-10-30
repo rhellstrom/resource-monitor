@@ -1,7 +1,6 @@
 use sysinfo::{CpuExt, DiskExt, NetworkExt, RefreshKind, System, SystemExt};
 use serde::{Serialize};
 
-
 #[derive(Serialize, Debug)]
 pub struct Resources {
     hostname: String,
@@ -34,7 +33,6 @@ impl Resources {
     /// Creates an instance of System and returns a Resources struct with desired system information
     pub fn new() -> Self {
         let mut sys = get_system();
-        sys.refresh_all();
         let disk_space = disk_total_usage(&mut sys);
         let os_version = sys.long_os_version().unwrap_or_else(|| String::from("Unknown"));
         let kernel_version = sys.kernel_version().unwrap_or_else(|| String::from("Unknown"));
@@ -50,7 +48,7 @@ impl Resources {
             cpu_amount: sys.cpus().len(),
             cpu_usage: sys.global_cpu_info().cpu_usage(),
             cpu_load_per_core: get_cpu_load_per_core(&sys),
-            disk_names: get_disks_names(&mut sys),
+            disk_names: get_disk_names(&mut sys),
             disk_available: get_disks_available(&mut sys),
             disk_total: get_disks_total(&mut sys),
             uptime: sys.uptime(),
@@ -89,49 +87,31 @@ impl Resources {
 }
 
 /// Iterates through each disk summing up the total and available space on the system
-fn disk_total_usage(sys: &mut System) -> (u64, u64){
-    sys.refresh_disks();
-    let mut total = 0;
-    let mut available = 0;
-    for disk in sys.disks() {
-        total += disk.total_space();
-        available += disk.available_space();
-    }
+fn disk_total_usage(sys: &mut System) -> (u64, u64) {
+    let (total, available) = sys.disks().iter().fold((0, 0), |acc, disk| {
+        (acc.0 + disk.total_space(), acc.1 + disk.available_space())
+    });
     (total, available)
 }
 
-fn get_disks_names(sys: &mut System) -> Vec<String> {
-    let mut names = vec![];
-    for disk in sys.disks() {
-        names.push(disk.name().to_string_lossy().to_string()) //This needs to be done cleaner
-    }
-    names
+/// Iterates through each disk and returning the disk names
+fn get_disk_names(sys: &mut System) -> Vec<String> {
+    sys.disks().iter().map(|disk| disk.name().to_string_lossy().to_string()).collect()
 }
 
+/// Iterates through each disk returning the space available
 fn get_disks_available(sys: &mut System) -> Vec<u64> {
-    sys.refresh_disks_list();
-    let mut names = vec![];
-    for disk in sys.disks() {
-        names.push(disk.available_space()) //This needs to be done cleaner
-    }
-    names
+    sys.disks().iter().map(|disk| disk.available_space()).collect()
 }
 
+/// Iterates through each disk returning the total capacity
 fn get_disks_total(sys: &mut System) -> Vec<u64> {
-    sys.refresh_disks_list();
-    let mut names = vec![];
-    for disk in sys.disks() {
-        names.push(disk.total_space()) //This needs to be done cleaner
-    }
-    names
+    sys.disks().iter().map(|disk| disk.total_space()).collect()
 }
 
+/// Iterates through each core returning the usage %
 fn get_cpu_load_per_core(sys: &System) -> Vec<f32> {
-    let mut load_per_core = Vec::new();
-    for cpu in sys.cpus() {
-        load_per_core.push(cpu.cpu_usage());
-    }
-    load_per_core
+    sys.cpus().iter().map(|cpu| cpu.cpu_usage()).collect()
 }
 
 ///Iterates over interfaces and returns total bytes received
@@ -154,7 +134,7 @@ fn get_total_transmitted(sys: &System) -> u64 {
     total
 }
 
-/// Returns a System struct using System::new_with_specifics and fills it with information using refresh.all()
+/// Returns a System struct using System::new_with_specifics and calls refresh.all() before returning
 fn get_system() -> System {
     let mut sys = System::new_with_specifics(
         RefreshKind::everything()
