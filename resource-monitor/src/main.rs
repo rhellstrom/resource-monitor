@@ -23,11 +23,21 @@ async fn main() {
         let resource_mutex = Arc::clone(&server_resources);
         async move {
             let resource = resource_mutex.lock().await;
-            let json_response = resource.serialize(); //Content-Type JSON
-            axum::http::Response::builder()
-                .header(CONTENT_TYPE, "application/json")
-                .body(json_response)
-                .unwrap()
+            match resource.serialize() {
+                Ok(json_response) => {
+                    axum::http::Response::builder()
+                        .header(CONTENT_TYPE, "application/json")
+                        .body(json_response)
+                        .unwrap()
+                }
+                Err(err) => {
+                    eprintln!("Error serializing resource: {:?}", err);
+                    axum::http::Response::builder()
+                        .status(500)
+                        .body("Internal Server Error".to_string())
+                        .unwrap()
+                }
+            }
         }
     }));
 

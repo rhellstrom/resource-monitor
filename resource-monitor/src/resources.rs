@@ -83,8 +83,8 @@ impl Resources {
         self.bytes_received = get_total_received(&self.system_struct);
     }
 
-    pub fn serialize(&self) -> String {
-        serde_json::to_string(self).unwrap()
+    pub fn serialize(&self) -> Result<String, serde_json::Error> {
+        serde_json::to_string(self)
     }
 }
 
@@ -126,7 +126,6 @@ fn get_disks_total(sys: &mut System) -> Vec<u64> {
     names
 }
 
-
 fn get_cpu_load_per_core(sys: &System) -> Vec<f32> {
     let mut load_per_core = Vec::new();
     for cpu in sys.cpus() {
@@ -166,4 +165,3 @@ fn get_system() -> System {
     sys.refresh_all();
     sys
 }
-
