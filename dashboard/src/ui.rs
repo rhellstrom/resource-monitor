@@ -1,6 +1,4 @@
-use std::io::Stdout;
 use std::ops::Index;
-use ratatui::backend::CrosstermBackend;
 use ratatui::Frame;
 use ratatui::layout::Direction::{Horizontal};
 use ratatui::prelude::*;
@@ -10,7 +8,7 @@ use ratatui::widgets::block::{Position, Title};
 use crate::app::App;
 use crate::util::{bytes_to_gb, bytes_to_gib, centered_rect, format_kilobytes, format_seconds, kbs_to_mbps, log_scale, used_as_percentage, used_percentage};
 
-pub fn draw(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App){
+pub fn draw(f: &mut Frame, app: &mut App){
     let chunks = Layout::default()
         .constraints([Constraint::Length(4), Constraint::Min(0), Constraint::Length(1)].as_ref())
         .split(f.size());
@@ -30,7 +28,7 @@ pub fn draw(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App){
     draw_key_legend(f, app, chunks[2]);
 }
 
-fn draw_tabs(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
+fn draw_tabs(f: &mut Frame, app: &mut App, area: Rect){
     let titles: Vec<Line> = app
         .tabs
         .titles
@@ -50,7 +48,7 @@ fn draw_tabs(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect)
     f.render_widget(tabs, area);
 }
 
-fn draw_gauge(f: &mut Frame<CrosstermBackend<Stdout>>, percentage: u16, title: &str, area: Rect) {
+fn draw_gauge(f: &mut Frame, percentage: u16, title: &str, area: Rect) {
     let gauge_style = if percentage > 90 {
         Style::default().fg(Color::Red)
     } else if percentage > 80 {
@@ -66,7 +64,7 @@ fn draw_gauge(f: &mut Frame<CrosstermBackend<Stdout>>, percentage: u16, title: &
     f.render_widget(gauge, area);
 }
 
-fn draw_server(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, index: usize, area: Rect) {
+fn draw_server(f: &mut Frame, app: &mut App, index: usize, area: Rect) {
     let server = app.servers.get(index).unwrap();
     let block = Block::default().borders(Borders::ALL).title(server.hostname.clone());
     f.render_widget(block, area);
@@ -109,7 +107,7 @@ fn draw_server(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, index: us
 
 }
 
-fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
+fn draw_server_overview(f: &mut Frame, app: &mut App, area: Rect) {
     let no_of_servers = app.servers.len() as u16;
     app.scroll.scroll_content_length = no_of_servers;
     if no_of_servers > 0 {
@@ -119,8 +117,8 @@ fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, 
         let view_length = (terminal_height as f64 * view_length_fraction) as u16;
         let end_index = position + view_length.min(no_of_servers - position);
         let subarea_height = area.height / view_length;
-        app.scroll.vertical_scroll_state = app.scroll.vertical_scroll_state.content_length(app.scroll.scroll_content_length);
-        app.scroll.vertical_scroll_state = app.scroll.vertical_scroll_state.viewport_content_length(view_length);
+        app.scroll.vertical_scroll_state = app.scroll.vertical_scroll_state.content_length(app.scroll.scroll_content_length as usize);
+        app.scroll.vertical_scroll_state = app.scroll.vertical_scroll_state.viewport_content_length(view_length as usize);
 
         for i in position ..end_index {
             // Calculate the position and dimensions of each subarea
@@ -145,7 +143,7 @@ fn draw_server_overview(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, 
     }
 }
 
-fn draw_detailed_view(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
+fn draw_detailed_view(f: &mut Frame, app: &mut App, area: Rect) {
     let current_index = app.tabs.index - 1; // The overview is always first index
     let block = Block::default().borders(Borders::ALL).title(app.servers.index(current_index).hostname.clone());
     f.render_widget(block, area);
@@ -162,7 +160,7 @@ fn draw_detailed_view(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, ar
     draw_info_network_row(f, app, chunks[2]);
 }
 
-fn draw_cpu_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
+fn draw_cpu_row(f: &mut Frame, app: &mut App, area: Rect) {
     let chunks = Layout::default()
         .direction(Horizontal)
         .constraints([Constraint::Percentage(85), Constraint::Percentage(15)].as_ref())
@@ -173,7 +171,7 @@ fn draw_cpu_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Re
     draw_cpu_table(f, app, chunks[1]);
 }
 
-fn draw_memory_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
+fn draw_memory_row(f: &mut Frame, app: &mut App, area: Rect) {
     let chunks = Layout::default()
         .direction(Horizontal)
         .constraints([Constraint::Percentage(60), Constraint::Percentage(40)].as_ref())
@@ -184,7 +182,7 @@ fn draw_memory_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area:
     draw_disk_table(f, app, chunks[1]);
 }
 
-fn draw_info_network_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
+fn draw_info_network_row(f: &mut Frame, app: &mut App, area: Rect){
     let chunks = Layout::default()
         .direction(Horizontal)
         .constraints([Constraint::Percentage(80), Constraint::Percentage(20)].as_ref())
@@ -201,7 +199,7 @@ fn draw_info_network_row(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App,
     draw_info_list(f, app, sub_chunks[1]);
 }
 
-fn draw_ram_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect) {
+fn draw_ram_chart(f: &mut Frame, app: &mut App, area: Rect) {
     let current_tab_index = app.tabs.index;
     if let Some(ram_data) = app.ram_chart_data.get(&(current_tab_index - 1)) {
         let used = bytes_to_gib(app.servers.get(current_tab_index - 1).unwrap().used_memory);
@@ -245,7 +243,7 @@ fn draw_ram_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: 
     }
 }
 
-fn draw_cpu_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
+fn draw_cpu_chart(f: &mut Frame, app: &mut App, area: Rect){
     let current_server_index = app.tabs.index - 1;
     if let Some(cpu_data) = app.cpu_chart_data.get(&(current_server_index)) {
         let one = app.servers.get(current_server_index).unwrap().load_avg_one;
@@ -290,7 +288,7 @@ fn draw_cpu_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: 
 }
 
 
-fn draw_cpu_table(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
+fn draw_cpu_table(f: &mut Frame, app: &mut App, area: Rect){
     let server_index = app.tabs.index - 1;
     let load_per_cores = &app.servers.get(server_index).unwrap().cpu_load_per_core;
 
@@ -319,7 +317,7 @@ fn draw_cpu_table(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: 
     f.render_stateful_widget(table, area, &mut app.cpu_table.state);
 }
 
-fn draw_disk_table(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
+fn draw_disk_table(f: &mut Frame, app: &mut App, area: Rect){
     let server_index = app.tabs.index - 1;
     let header_row = Row::new(vec!["Disk", "Used", "Free", "Total"])
         .style(Style::default())
@@ -355,7 +353,7 @@ fn draw_disk_table(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area:
     f.render_widget(table, area);
 }
 
-fn draw_info_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
+fn draw_info_list(f: &mut Frame, app: &mut App, area: Rect){
     let server_index = app.tabs.index - 1;
     let mut items: Vec<ListItem> = vec![];
     items.push(ListItem::new(format!("OS: {}", app.servers.get(server_index).unwrap().os_version)));
@@ -370,7 +368,7 @@ fn draw_info_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: 
 }
 
 
-fn draw_network_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &App, area: Rect) {
+fn draw_network_chart(f: &mut Frame, app: &App, area: Rect) {
     let current_server_index = app.tabs.index - 1;
     if let Some(received_data) = app.received_chart_data.get(&(current_server_index)) {
         if let Some(transmitted_data) = app.transmitted_chart_data.get(&(current_server_index)){
@@ -431,7 +429,7 @@ fn draw_network_chart(f: &mut Frame<CrosstermBackend<Stdout>>, app: &App, area: 
     }
 }
 
-fn draw_network_info_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
+fn draw_network_info_list(f: &mut Frame, app: &mut App, area: Rect){
     let current_server_index = app.tabs.index - 1;
     if let Some(received_data) = app.received_chart_data.get(&(current_server_index)) {
         if let Some(transmitted_data) = app.transmitted_chart_data.get(&(current_server_index)) {
@@ -454,7 +452,7 @@ fn draw_network_info_list(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App
     }
 }
 
-fn draw_endpoint_popup(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App){
+fn draw_endpoint_popup(f: &mut Frame, app: &mut App){
     let size = f.size();
     let area = centered_rect(60, 20, size);
     f.render_widget(Clear, area); //this clears out the background
@@ -472,7 +470,7 @@ fn draw_endpoint_popup(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App){
                  area.y + 1,)
 }
 
-fn draw_key_legend(f: &mut Frame<CrosstermBackend<Stdout>>, app: &mut App, area: Rect){
+fn draw_key_legend(f: &mut Frame, app: &mut App, area: Rect){
     let title = if app.show_endpoint_popup{
        "Esc: Cancel \t Enter: Add"
     }else{

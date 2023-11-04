@@ -199,14 +199,14 @@ impl ScrollState{
     pub fn up(&mut self){
         if self.scroll_pos > 0 {
             self.scroll_pos -= 1;
-            self.vertical_scroll_state = self.vertical_scroll_state.position(self.scroll_pos);
+            self.vertical_scroll_state = self.vertical_scroll_state.position(self.scroll_pos as usize);
         }
     }
 
     pub fn down(&mut self) {
         if self.scroll_pos < self.scroll_content_length {
             self.scroll_pos += 1;
-            self.vertical_scroll_state = self.vertical_scroll_state.position(self.scroll_pos);
+            self.vertical_scroll_state = self.vertical_scroll_state.position(self.scroll_pos as usize);
         }
     }
 }
